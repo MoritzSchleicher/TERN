@@ -140,7 +140,7 @@ export default function GlobeView({ pin, onReady }: Props) {
       const RADIUS = 100;
       const CENTER = new Vector3(0, 0, 0);
       const LON_OFFSET_DEG = -90; // dein gemessener Versatz
-      const FINAL_ZOOM = 0.35; //in %
+      const FINAL_ZOOM = 0.5; //in %
 
       // Sanftes Easing
       const easeInOutCubic = (t: number) =>

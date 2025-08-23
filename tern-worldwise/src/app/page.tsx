@@ -9,47 +9,73 @@ const GlobeView = dynamic(() => import("@/components/GlobeView"), { ssr: false }
 
 type GlobeAPI = { flyTo: (lat: number, lng: number, altitude?: number, ms?: number) => void };
 
-// *────────────────────────────────
-// * NOTE:
-// * { lat: 0, lng: -90 } -> Golf von Guinea (Äquator/Null)
-// * sollte eigentlich das sein { lat: 0, lng: 0 }
-// * 
-// * flyTo(0, 90);         // Indischer Ozean (östlich)
-// * flyTo(0, -90);        // Pazifik (westlich)
-// * flyTo(52.52, 13.405); // Berlin
-// *────────────────────────────────
-const QUESTIONS = [
-  {
-    id: "q1",
-    question: "Wo entstand die erste bekannte Demokratie?",
-    answers: ["Athen", "Rom", "Karthago", "Sparta"],
-    correctIndex: 0,
-    location: { lat: 37.9838, lng: 23.7275, country: "Griechenland" },
-    fact: "Im 5. Jh. v. Chr. prägten die athenischen Volksversammlungen wesentliche demokratische Institutionen."
-  }
-];
+// Fragen aus der externen Datei laden
+import { Questions, type Question } from "../data/questions";
 
-type Phase = "loading" | "intro" | "game";
+type Phase = "loading" | "intro" | "game" | "result";
+type AnswerState = "idle" | "confirmed"; 
+// idle: Auswahl möglich
+// confirmed: Antwort bestätigt, Fact sichtbar, „Weiter“-Button erscheint
+
+const FLY_ALTITUDE = 1.4;
+const FLY_MS = 1200;
 
 export default function Home() {
   const [phase, setPhase] = useState<Phase>("loading");
   const [globeReady, setGlobeReady] = useState(false);
   const apiRef = useRef<GlobeAPI | null>(null);
 
-  // Simple Quiz-State
+  // Quiz-State
+  const [qIndex, setQIndex] = useState(0);
   const [selected, setSelected] = useState<number | null>(null);
-  const [state, setState] = useState<"idle" | "correct" | "wrong">("idle");
-  const current_question = QUESTIONS[0];
+  const [state, setState] = useState<AnswerState>("idle");
+  const [correctCount, setCorrectCount] = useState(0);
+
+  const total = Questions.length;
+  const current: Question = Questions[qIndex];
+
+  const resetToIntro = useCallback(() => {
+    setPhase("intro");
+    setQIndex(0);
+    setSelected(null);
+    setState("idle");
+    setCorrectCount(0);
+  }, []);
 
   const handleReady = useCallback((api: GlobeAPI) => {
     apiRef.current = api;
     setGlobeReady(true);
-
-    // nur aus "loading" nach "intro" wechseln (nicht, wenn wir schon im Spiel sind)
+    // kurze Micro-Delay nur für sanfteren Loader-Exit
     setTimeout(() => {
       setPhase((p) => (p === "loading" ? "intro" : p));
     }, 250);
   }, []);
+
+  const onConfirm = useCallback(() => {
+    if (selected === null || state !== "idle") return;
+
+    // Score aktualisieren
+    const isCorrect = selected === current.correctIndex;
+    if (isCorrect) setCorrectCount((c) => c + 1);
+
+    // Flug starten
+    apiRef.current?.flyTo(current.location.lat, current.location.lng, FLY_ALTITUDE, FLY_MS);
+
+    // UI-Status: Antworten sperren, Fact anzeigen
+    setState("confirmed");
+  }, [current, selected, state]);
+
+  const onNext = useCallback(() => {
+    // Wenn letzte Frage: Ergebnis anzeigen
+    if (qIndex + 1 >= total) {
+      setPhase("result");
+      return;
+    }
+    // Sonst nächste Frage
+    setQIndex((i) => i + 1);
+    setSelected(null);
+    setState("idle");
+  }, [qIndex, total]);
 
   return (
     <main className="relative h-[100dvh] w-full bg-black">
@@ -62,14 +88,21 @@ export default function Home() {
       {/* Phase 2: Intro-Overlay */}
       {phase === "intro" && (
         <div className="pointer-events-none absolute inset-0 z-10">
-          <div className="pointer-events-auto absolute left-1/2 top-1/2 w-[min(520px,92vw)] -translate-x-1/2 -translate-y-1/2 rounded-2xl bg-white/90 p-6 text-center shadow-xl">
+          <div className="pointer-events-auto absolute left-1/2 top-1/2 w-[min(520px,92vw)] -translate-x-1/2 -translate-y-1/2 rounded-2xl bg-[var(--col-light)] p-6 text-center shadow-xl">
             <h1 className="mb-2 text-2xl font-semibold text-slate-900">Willkommen bei TERN 🌍</h1>
             <p className="mb-5 text-slate-700">
               Teste dein Weltwissen auf der 3D-Globe. Klicke auf „Spiel starten“, um loszulegen.
             </p>
             <button
-              className="rounded-xl bg-cyan-500 px-5 py-2 font-medium text-white"
-              onClick={() => setPhase("game")}
+              className="rounded-xl bg-[var(--col-secondary)] px-5 py-2 font-medium text-white"
+              onClick={() => {
+                // vollständiger Reset beim Start
+                setPhase("game");
+                setQIndex(0);
+                setSelected(null);
+                setState("idle");
+                setCorrectCount(0);
+              }}
             >
               Spiel starten
             </button>
@@ -82,27 +115,32 @@ export default function Home() {
         <div className="pointer-events-none absolute inset-0 z-10">
           {/* Frage oben */}
           <div className="pointer-events-auto mx-auto mt-4 w-[min(900px,95vw)] rounded-2xl bg-white/90 p-5 shadow-lg">
-            <div className="mb-1 text-xs uppercase tracking-wide text-slate-500">Frage 1 / 1</div>
-            <h2 className="text-lg font-semibold text-slate-900">{current_question.question}</h2>
+            <div className="mb-1 text-xs uppercase tracking-wide text-slate-500">
+              Frage {qIndex + 1} / {total}
+            </div>
+            <h2 className="text-lg font-semibold text-slate-900">
+              {current.question}
+            </h2>
           </div>
 
-          {/* Antworten unten */}
+          {/* Antworten & Controls unten */}
           <div className="pointer-events-auto absolute inset-x-0 bottom-4 mx-auto grid w-[min(900px,95vw)] gap-2">
-            {current_question.answers.map((opt, i) => {
+            {current.answers.map((opt, i) => {
               const isSel = selected === i;
-              const isCorrect = state !== "idle" && i === current_question.correctIndex;
-              const isWrong = state !== "idle" && isSel && i !== current_question.correctIndex;
+              const isCorrect = state === "confirmed" && i === current.correctIndex;
+              const isWrong = state === "confirmed" && isSel && i !== current.correctIndex;
 
               let classes =
-                "rounded-xl border px-4 py-3 text-left text-slate-900 bg-white/90 shadow";
-              if (state === "idle") classes += isSel ? " border-cyan-400" : " border-slate-300";
+                "rounded-xl border-10 border-[var(--col-light)] px-4 py-3 text-left text-slate-900 bg-[var(--col-light)] shadow transition-colors";
+              if (state === "idle") classes += isSel ? " border-[var(--col-secondary)]" : " border-[var(--col-light)]";
               if (isCorrect) classes += " border-emerald-400 bg-emerald-50";
               if (isWrong) classes += " border-rose-400 bg-rose-50";
 
               return (
                 <button
-                  key={opt}
+                  key={`${opt}-${i}`}
                   className={classes}
+                  disabled={state !== "idle"}
                   onClick={() => state === "idle" && setSelected(i)}
                 >
                   {opt}
@@ -112,32 +150,67 @@ export default function Home() {
 
             <div className="mt-2 flex gap-2">
               {state === "idle" ? (
-                <button
-                  className="rounded-xl bg-cyan-500 px-4 py-2 font-medium text-white disabled:opacity-50"
-                  disabled={selected === null}
-                  onClick={() => {
-                    if (selected === null) return;
-                    const ok = selected === current_question.correctIndex;
-                    setState(ok ? "correct" : "wrong");
-                    apiRef.current?.flyTo(current_question.location.lat, current_question.location.lng, 1.4, 1000);
-                  }}
-                >
-                  Bestätigen
-                </button>
+                <>
+                  <button
+                    className="rounded-xl bg-cyan-500 px-4 py-2 font-medium text-white disabled:opacity-50"
+                    disabled={selected === null}
+                    onClick={onConfirm}
+                  >
+                    Bestätigen
+                  </button>
+                  <button
+                    className="rounded-xl border border-slate-400 px-4 py-2 font-medium text-slate-900"
+                    onClick={resetToIntro}
+                  >
+                    Zurück
+                  </button>
+                </>
               ) : (
-                <button
-                  className="rounded-xl border border-slate-400 px-4 py-2 font-medium text-slate-900"
-                  onClick={() => {
-                    // (nur eine Frage im Demo)
-                    setSelected(null);
-                    setState("idle");
-                    setPhase("intro");
-                  }}
-                >
-                  Zurück
-                </button>
+                <>
+                  <button
+                    className="rounded-xl bg-emerald-500 px-4 py-2 font-medium text-white"
+                    onClick={onNext}
+                  >
+                    Weiter
+                  </button>
+                  <button
+                    className="rounded-xl border border-slate-400 px-4 py-2 font-medium text-slate-900"
+                    onClick={resetToIntro}
+                  >
+                    Startscreen
+                  </button>
+                </>
               )}
             </div>
+
+            {/* Fact-Box: erscheint nach Bestätigen */}
+            {state === "confirmed" && current.fact && (
+              <div className="mt-2 rounded-lg bg-white/90 p-3 text-sm text-slate-700 border border-slate-200">
+                {current.fact}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Phase 4: Result-Screen */}
+      {phase === "result" && (
+        <div className="pointer-events-none absolute inset-0 z-10">
+          <div className="pointer-events-auto absolute left-1/2 top-1/2 w-[min(520px,92vw)] -translate-x-1/2 -translate-y-1/2 rounded-2xl bg-white/90 p-6 text-center shadow-xl">
+            <h2 className="mb-2 text-2xl font-semibold text-slate-900">Ergebnis</h2>
+            <p className="mb-1 text-slate-800">
+              Du hast <span className="font-semibold">{correctCount}</span> von{" "}
+              <span className="font-semibold">{total}</span> Fragen richtig beantwortet.
+            </p>
+            <p className="mb-5 text-slate-600">
+              ({Math.round((correctCount / Math.max(1, total)) * 100)}%)
+            </p>
+            <button
+              className="rounded-xl bg-cyan-500 px-5 py-2 font-medium text-white"
+              onClick={resetToIntro}
+            >
+              Nochmal spielen!
+            </button>
           </div>
         </div>
       )}

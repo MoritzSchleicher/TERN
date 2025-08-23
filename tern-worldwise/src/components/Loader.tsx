@@ -61,11 +61,11 @@ export default function Loader({ isReady }: { isReady: boolean }) {
   // JSX-Layout:
   // Ein Fullscreen-Overlay (absolute, inset-0) über allem (z-50) mit dunklem Hintergrund.
   return (
-    <div className="absolute inset-0 z-50 grid place-items-center bg-[#0B1020]">
+    <div className="absolute inset-0 z-50 grid place-items-center bg-[var(--col-dark)]">
       {/* Zentrierte Box, responsive Breite: max 520px oder 90% der Viewport-Breite */}
       <div className="w-[min(520px,90vw)]">
         {/* Obere Beschriftung mit Prozentzahl */}
-        <div className="mb-3 text-center text-sm font-medium text-cyan-200">
+        <div className="mb-3 text-center text-sm font-medium text-[var(--col-light)]">
           lädt assets … {clamped}%
         </div>
 
