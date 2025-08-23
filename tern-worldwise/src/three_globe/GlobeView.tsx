@@ -59,6 +59,7 @@ export default function GlobeView({ pin, onReady }: Props) {
       .then((geo) => {
         globe
           .polygonsData(geo.features)
+          .polygonAltitude(() => 0)  
           .polygonCapColor(() => "rgba(255,255,255,0.03)")
           .polygonSideColor(() => "rgba(111,231,231,0.10)")
           .polygonStrokeColor(() => "rgba(111,231,231,0.25)")
