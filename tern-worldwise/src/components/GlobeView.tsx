@@ -140,6 +140,7 @@ export default function GlobeView({ pin, onReady }: Props) {
       const RADIUS = 100;
       const CENTER = new Vector3(0, 0, 0);
       const LON_OFFSET_DEG = -90; // dein gemessener Versatz
+      const FINAL_ZOOM = 0.35; //in %
 
       // Sanftes Easing
       const easeInOutCubic = (t: number) =>
@@ -218,7 +219,12 @@ export default function GlobeView({ pin, onReady }: Props) {
           // Richtung slerpen (kürzester Bogen um’s Zentrum)
           const dirNow = slerpVec3(startDir, targetDir, k);
           // Distanz lerpen (Zoom)
-          const distNow = startDist + (endDist - startDist) * k;
+          let distNow = startDist + (endDist - startDist) * k;
+          // Faktor 0.85 = FINAL_ZOOM% näher als Enddistanz
+          if (t > 0.7) {
+            const zoomPhase = (t - 0.7) / 0.3; // von 0 → 1
+            distNow *= 1 - FINAL_ZOOM * zoomPhase;   // zoom in
+          }
 
           // Kamera um’s Zentrum platzieren & zum Zentrum blicken
           camera.position.copy(dirNow.multiplyScalar(distNow));
