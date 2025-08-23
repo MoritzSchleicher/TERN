@@ -1,12 +1,11 @@
-// src/app/App.tsx
 "use client";
 import { useRef, useState } from "react"
-import GlobeView from "@/three_globe/GlobeView"
+import GlobeView from "@/components/GlobeView"
 import { demoQuestions } from "@/data/questions"
 
 type GlobeAPI = { flyTo: (lat: number, lng: number, altitude?: number, ms?: number) => void }
 
-export default function App() {
+export default function Game() {
   const [idx, setIdx] = useState(0)
   const [selected, setSelected] = useState<number | null>(null)
   const [state, setState] = useState<"idle" | "correct" | "wrong">("idle")
