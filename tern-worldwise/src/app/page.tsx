@@ -9,12 +9,23 @@ const GlobeView = dynamic(() => import("@/components/GlobeView"), { ssr: false }
 
 type GlobeAPI = { flyTo: (lat: number, lng: number, altitude?: number, ms?: number) => void };
 
+// *────────────────────────────────
+// * NOTE:
+// * { lat: 0, lng: -90 } -> Golf von Guinea (Äquator/Null)
+// * sollte eigentlich das sein { lat: 0, lng: 0 }
+// * 
+// * flyTo(0, 90);         // Indischer Ozean (östlich)
+// * flyTo(0, -90);        // Pazifik (westlich)
+// * flyTo(52.52, 13.405); // Berlin
+// *────────────────────────────────
 const QUESTIONS = [
   {
-    question: "Wo liegt Berlin?",
-    answers: ["52.52°N, 13.40°E", "48.86°N, 2.35°E", "40.71°N, 74.01°W"],
+    id: "q1",
+    question: "Wo entstand die erste bekannte Demokratie?",
+    answers: ["Athen", "Rom", "Karthago", "Sparta"],
     correctIndex: 0,
-    location: { lat: 52, lng: 13 }
+    location: { lat: 37.9838, lng: 23.7275, country: "Griechenland" },
+    fact: "Im 5. Jh. v. Chr. prägten die athenischen Volksversammlungen wesentliche demokratische Institutionen."
   }
 ];
 

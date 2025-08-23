@@ -139,6 +139,7 @@ export default function GlobeView({ pin, onReady }: Props) {
       // Kugelradius in three-globe ist i.d.R. ~100
       const RADIUS = 100;
       const CENTER = new Vector3(0, 0, 0);
+      const LON_OFFSET_DEG = -90; // dein gemessener Versatz
 
       // Sanftes Easing
       const easeInOutCubic = (t: number) =>
@@ -146,13 +147,18 @@ export default function GlobeView({ pin, onReady }: Props) {
 
       // Lat/Lng -> 3D-Punkt auf der Kugel
       function latLngToVec3(lat: number, lng: number, r = RADIUS) {
-        const phi = (90 - lat) * (Math.PI / 180);
-        const theta = (lng + 180) * (Math.PI / 180);
-        const x = -r * Math.sin(phi) * Math.cos(theta);
-        const z =  r * Math.sin(phi) * Math.sin(theta);
-        const y =  r * Math.cos(phi);
+        const DEG2RAD = Math.PI / 180;
+        const latRad = lat * DEG2RAD;
+        const lngRad = (lng + LON_OFFSET_DEG) * DEG2RAD; // <-- Offset hier einrechnen
+
+        // Achsen wie zuvor (three-globe kompatibel)
+        const x =  r * Math.cos(latRad) * Math.cos(lngRad);
+        const y =  r * Math.sin(latRad);
+        const z = -r * Math.cos(latRad) * Math.sin(lngRad);
+
         return new Vector3(x, y, z);
       }
+
 
       // mappe "altitude" (gefühlter Zoom) -> Kameradistanz
       function altitudeToDistance(altitude: number) {
@@ -221,7 +227,7 @@ export default function GlobeView({ pin, onReady }: Props) {
           controls.update();
 
           // Wenn deine three-globe-Version das erwartet:
-          (globe as any).setPointOfView?.(camera);
+          /* (globe as any).setPointOfView?.(camera); */
 
           if (t < 1) {
             activeTween = requestAnimationFrame(step);
@@ -271,7 +277,7 @@ export default function GlobeView({ pin, onReady }: Props) {
   }, []);
 
   // Pins aktualisieren (bei prop-Änderung)
-  useEffect(() => {
+  /* useEffect(() => {
     const globe = globeRef.current;
     if (!globe) return;
 
@@ -283,7 +289,7 @@ export default function GlobeView({ pin, onReady }: Props) {
     } else {
       globe.pointsData?.([]);
     }
-  }, [pin]);
+  }, [pin]); */
 
   return <div ref={containerRef} style={{ position: "absolute", inset: 0 }} />;
 }
