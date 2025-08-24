@@ -4,9 +4,12 @@
   --col-dark: #273C48;      /* dunkles Blau */
   --col-light: #FFFCF9;     /* Off-White */
   --col-accent: #FAD6A5;    /* Beige */
+  --col-correct: #00d492;
+  --col-wrong: #ff637e;
 
   /* abgeleitete Variablen */
   --bg-overlay: rgba(255, 252, 249, 0.9); /* Off-White mit Transparenz */
   --text-main: var(--col-dark);
   --text-light: var(--col-light);
+  
 }

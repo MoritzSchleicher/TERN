@@ -1,20 +1,31 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import type { Vector3 } from "three";
+import { Vector3 } from "three";
 
-type Pin = { lat: number; lng: number; label?: string; color?: string };
+export type Pin = { lat: number; lng: number; label?: string; color?: string };
 
-type Props = {
-  pin?: Pin;
-  onReady?: (api: { flyTo: (lat: number, lng: number, altitude?: number, ms?: number) => void }) => void;
+export type GlobeAPI = {
+  flyTo: (lat: number, lng: number, altitude?: number, ms?: number) => void;
+  setPin: (pin: Pin, opts?: { altitude?: number; radius?: number }) => void;
+  clearPin: () => void;
 };
+
+export type Props = {
+  pin?: Pin; // optional weiterhin als Prop nutzbar
+  onReady?: (api: GlobeAPI) => void;
+};
+
+const ROTATION_SPEED = -0.25;
+const GLOBE_POS_START: Vector3 = new Vector3(0, 0, 300);
+
+let flags: Pin[] = [];
 
 export default function GlobeView({ pin, onReady }: Props) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const globeRef = useRef<any>(null); // three-globe Instanz
 
-  // (A) onReady als Ref festhalten, damit der Init-Effekt [] haben kann
+  // (A) onReady als Ref halten
   const onReadyRef = useRef<Props["onReady"]>(onReady);
   useEffect(() => {
     onReadyRef.current = onReady;
@@ -24,29 +35,26 @@ export default function GlobeView({ pin, onReady }: Props) {
     const el = containerRef.current;
     if (!el) return;
 
-    let disposed = false; 
+    let disposed = false;
     let renderer: any;
     let scene: any;
     let camera: any;
     let raf = 0;
 
     let onResize: () => void;
-    const onMove = (e: MouseEvent) => {};
-    const onUp = () => {};
-    const onDown = (e: MouseEvent) => {};
-
     let cleanupExtraListeners = () => {};
+    let activeTween = 0;
 
     (async () => {
-      // Nur im Browser laden:
-      const [{ Scene, Color, WebGLRenderer, PerspectiveCamera, AmbientLight, DirectionalLight, Vector3 }, { default: ThreeGlobe }] =
-        await Promise.all([import("three"), import("three-globe")]);
+      const [
+        { Scene, Color, WebGLRenderer, PerspectiveCamera, AmbientLight, DirectionalLight, Vector3 },
+        { default: ThreeGlobe },
+      ] = await Promise.all([import("three"), import("three-globe")]);
       const [{ OrbitControls }] = await Promise.all([
-        import("three/examples/jsm/controls/OrbitControls.js")
+        import("three/examples/jsm/controls/OrbitControls.js"),
       ]);
 
       if (disposed) return;
-
       el.textContent = "";
 
       // --- Three.js Grundsetup
@@ -64,36 +72,35 @@ export default function GlobeView({ pin, onReady }: Props) {
       const controls = new OrbitControls(camera, renderer.domElement);
       controls.enableDamping = true;
       controls.dampingFactor = 0.05;
-      // sinnvolle Grenzen (je nach Szene anpassen)
-      controls.minDistance = 120;
-      controls.maxDistance = 500;
-      // optional: keine Schwenks über Pol flippen
+      controls.minDistance = 200;
+      controls.maxDistance = 400;
       controls.enablePan = false;
+      controls.autoRotate = true;
+      controls.autoRotateSpeed = ROTATION_SPEED;
 
-      // Soft Lights
-      scene.add(new AmbientLight(0xffffff, 0.8));
-      const dir = new DirectionalLight(0xffffff, 0.6);
-      dir.position.set(1, 1, 1);
-      scene.add(dir);
+      scene.add(new AmbientLight(0xffffff, 0.5));
+      const dirLight = new DirectionalLight(0xfff5ec, 0.7);
+      dirLight.position.set(1, 0.7, 1);
+      scene.add(dirLight);
 
       // --- Globe-Instanz
       const globe: any = new ThreeGlobe()
         .globeImageUrl("/textures/earth.jpg")
         .bumpImageUrl("/textures/earth-bump.jpg")
         .showAtmosphere(true)
-        .atmosphereColor("#6FE7E7")
-        .atmosphereAltitude(0.18);
+        .atmosphereColor("#6BB6E9")
+        .atmosphereAltitude(0.2);
 
       // Default-Point-Settings
-      if (globe.pointAltitude) globe.pointAltitude(0.02);
-      if (globe.pointColor) globe.pointColor(() => "#6FE7E7");
-      if (globe.pointRadius) globe.pointRadius(0.4);
-
+      globe.pointAltitude?.(0.05);
+      globe.pointColor?.(() => "#6FE7E7");
+      globe.pointRadius?.(0.4);
 
       scene.add(globe);
       globeRef.current = globe;
       (globe as any).controls?.(controls);
-      /* (globe as any).setPointOfView(camera); */
+      (globe as any).setPointOfView?.(camera);
+      camera.position.set(GLOBE_POS_START.x, GLOBE_POS_START.y, GLOBE_POS_START.z);
 
       // Ländergrenzen
       fetch("/data/countries.geo.json")
@@ -101,31 +108,12 @@ export default function GlobeView({ pin, onReady }: Props) {
         .then((geo) => {
           globe
             .polygonsData(geo.features)
-            .polygonAltitude(() => 0)
+            .polygonAltitude(() => 0.0005)
             .polygonCapColor(() => "rgba(255,255,255,0.03)")
             .polygonSideColor(() => "rgba(111,231,231,0.10)")
             .polygonStrokeColor(() => "rgba(111,231,231,0.25)");
         })
         .catch(() => {});
-
-      // rudimentäre Drag-Rotation
-      let isDragging = false;
-      let prev = { x: 0, y: 0 };
-      const _onDown = (e: MouseEvent) => {
-        isDragging = true;
-        prev = { x: e.clientX, y: e.clientY };
-      };
-      const _onMove = (e: MouseEvent) => {
-        if (!isDragging) return;
-        const dx = e.clientX - prev.x;
-        const dy = e.clientY - prev.y;
-        prev = { x: e.clientX, y: e.clientY };
-        globe.rotation.y += dx * 0.005;
-        globe.rotation.x += dy * 0.005;
-      };
-      const _onUp = () => {
-        isDragging = false;
-      };
 
       // Resize
       onResize = () => {
@@ -136,79 +124,47 @@ export default function GlobeView({ pin, onReady }: Props) {
       };
       window.addEventListener("resize", onResize);
 
-      // Kugelradius in three-globe ist i.d.R. ~100
+      // Easing / Math
       const RADIUS = 100;
       const CENTER = new Vector3(0, 0, 0);
-      const LON_OFFSET_DEG = -90; // dein gemessener Versatz
-      const FINAL_ZOOM = 0.5; //in %
+      const LON_OFFSET_DEG = -90;
+      const FINAL_ZOOM = 0.5;
 
-      // Sanftes Easing
       const easeInOutCubic = (t: number) =>
         t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
 
-      // Lat/Lng -> 3D-Punkt auf der Kugel
+      function altitudeToDistance(altitude: number) {
+        return RADIUS * altitude * 2.2;
+      }
+
       function latLngToVec3(lat: number, lng: number, r = RADIUS) {
         const DEG2RAD = Math.PI / 180;
         const latRad = lat * DEG2RAD;
-        const lngRad = (lng + LON_OFFSET_DEG) * DEG2RAD; // <-- Offset hier einrechnen
-
-        // Achsen wie zuvor (three-globe kompatibel)
-        const x =  r * Math.cos(latRad) * Math.cos(lngRad);
-        const y =  r * Math.sin(latRad);
+        const lngRad = (lng + LON_OFFSET_DEG) * DEG2RAD;
+        const x = r * Math.cos(latRad) * Math.cos(lngRad);
+        const y = r * Math.sin(latRad);
         const z = -r * Math.cos(latRad) * Math.sin(lngRad);
-
         return new Vector3(x, y, z);
       }
 
-
-      // mappe "altitude" (gefühlter Zoom) -> Kameradistanz
-      function altitudeToDistance(altitude: number) {
-        // tweakbar: 2.2 ist ein guter Startwert in deinem Setup
-        return RADIUS * altitude * 2.2;
-      }
-      
-      let activeTween = 0;
-
-      
       function slerpVec3(a: Vector3, b: Vector3, t: number) {
-        // beide Richtungen normalisieren
         const v0 = a.clone().normalize();
         const v1 = b.clone().normalize();
-
-        // numerisch stabil clampen
         let dot = v0.dot(v1);
         dot = Math.min(Math.max(dot, -1), 1);
-
-        // wenn fast gleich, einfach lerp + normalisieren
-        if (dot > 0.9995) {
-          return v0.clone().lerp(v1, t).normalize();
-        }
-
-        const theta0 = Math.acos(dot);     // Winkel zwischen v0 und v1
-        const theta  = theta0 * t;
+        if (dot > 0.9995) return v0.clone().lerp(v1, t).normalize();
+        const theta0 = Math.acos(dot);
+        const theta = theta0 * t;
         const v2 = v1.clone().sub(v0.clone().multiplyScalar(dot)).normalize();
-
-        // Slerp-Formel
-        return v0.clone().multiplyScalar(Math.cos(theta)).add(
-          v2.multiplyScalar(Math.sin(theta))
-        );
+        return v0.clone().multiplyScalar(Math.cos(theta)).add(v2.multiplyScalar(Math.sin(theta)));
       }
-      /**
-       * Fliegt die Kamera zu lat/lng mit gewünschter "altitude".
-       * altitude steuert hier den Abstand-Gefühl, passe den Faktor ruhig an.
-       */
+
       function flyTo(lat: number, lng: number, altitude = 1.4, ms = 1200) {
-        // Zielrichtung: Normalvektor zum Oberflächenpunkt
-        const targetDir = latLngToVec3(lat, lng, 1).normalize(); // r=1, nur Richtung
-
-        // Start: aktuelle Richtung + Distanz
+        const targetDir = latLngToVec3(lat, lng, 1).normalize();
         const startDist = camera.position.length();
-        const startDir  = camera.position.clone().normalize();
-
-        // Ende: Zielrichtung + gewünschte Distanz
+        const startDir = camera.position.clone().normalize();
         const endDist = altitudeToDistance(altitude);
 
-        // alten Tween abbrechen
         if (activeTween) cancelAnimationFrame(activeTween);
         const t0 = performance.now();
 
@@ -216,23 +172,19 @@ export default function GlobeView({ pin, onReady }: Props) {
           const t = Math.min(1, (performance.now() - t0) / ms);
           const k = easeInOutCubic(t);
 
-          // Richtung slerpen (kürzester Bogen um’s Zentrum)
           const dirNow = slerpVec3(startDir, targetDir, k);
-          // Distanz lerpen (Zoom)
           let distNow = startDist + (endDist - startDist) * k;
-          // Faktor 0.85 = FINAL_ZOOM% näher als Enddistanz
+
           if (t > 0.7) {
-            const zoomPhase = (t - 0.7) / 0.3; // von 0 → 1
-            distNow *= 1 - FINAL_ZOOM * zoomPhase;   // zoom in
+            const zoomPhase = (t - 0.7) / 0.3;
+            distNow *= 1 - FINAL_ZOOM * zoomPhase;
           }
 
-          // Kamera um’s Zentrum platzieren & zum Zentrum blicken
           camera.position.copy(dirNow.multiplyScalar(distNow));
-          controls.target.copy(CENTER);   // PIVOT BLEIBT IMMER ZENTRUM
+          controls.target.copy(CENTER);
           camera.lookAt(CENTER);
           controls.update();
 
-          // Wenn deine three-globe-Version das erwartet:
           /* (globe as any).setPointOfView?.(camera); */
 
           if (t < 1) {
@@ -242,8 +194,31 @@ export default function GlobeView({ pin, onReady }: Props) {
 
         activeTween = requestAnimationFrame(step);
       }
-      onReadyRef.current?.({ flyTo });
 
+      // ---- NEU: setPin API
+      function setPin(pin: Pin, opts?: { altitude?: number; radius?: number }) {
+        // dedupe nach Koordinate (nicht .includes, das vergleicht Objekt-Referenzen)
+        const key = `${pin.lat.toFixed(6)},${pin.lng.toFixed(6)}`;
+        const i = flags.findIndex(p => `${p.lat.toFixed(6)},${p.lng.toFixed(6)}` === key);
+        if (i === -1) flags.push(pin); else flags[i] = { ...flags[i], ...pin };
+
+        // Accessors: Farbe/Radius/Altitude/Label pro Punkt
+        globe.pointColor?.((d: Pin) => d.color ?? "#6FE7E7");
+        globe.pointRadius?.((d: Pin) => opts?.radius ?? 0.4);
+        globe.pointAltitude?.((d: Pin) => opts?.altitude ?? 0.02);
+        globe.pointLabel?.((d: Pin) => d.label ?? ""); // oder globe.pointLabel?.("label")
+
+        // Daten setzen (neue Array-Referenz triggert Updates zuverlässiger)
+        globe.pointsData?.([...flags]);
+      }
+
+      function clearPin() {
+        flags = [];
+        globe.pointsData?.([]);
+      }
+
+      // API nach außen geben
+      onReadyRef.current?.({ flyTo, setPin, clearPin });
 
       // Render-Loop
       const animate = () => {
@@ -254,48 +229,52 @@ export default function GlobeView({ pin, onReady }: Props) {
       };
       animate();
 
-      // Listener-Cleanup-Closure
+      // Cleanup
       cleanupExtraListeners = () => {
         window.removeEventListener("resize", onResize);
         if (activeTween) cancelAnimationFrame(activeTween);
       };
     })();
 
-    // Cleanup
     return () => {
-      disposed = true;                  
+      disposed = true;
       cancelAnimationFrame(raf);
       cleanupExtraListeners();
       if (renderer) {
         try {
           renderer.dispose?.();
         } catch {}
-        // Canvas entfernen, falls noch vorhanden
         const el = containerRef.current;
         if (el && renderer.domElement && el.contains(renderer.domElement)) {
           el.removeChild(renderer.domElement);
         }
       }
-      // Szene leeren
       (scene as any)?.clear?.();
       globeRef.current = null;
     };
   }, []);
 
-  // Pins aktualisieren (bei prop-Änderung)
-  /* useEffect(() => {
+  // Optional: weiterhin Prop-Änderungen spiegeln
+  useEffect(() => {
     const globe = globeRef.current;
     if (!globe) return;
 
     if (pin) {
-      const pts = [{ lat: pin.lat, lng: pin.lng, label: pin.label, color: pin.color ?? "#6FE7E7" }];
+      const pts = [
+        {
+          lat: pin.lat,
+          lng: pin.lng,
+          label: pin.label,
+          color: pin.color ?? "#6FE7E7",
+        },
+      ];
       globe.pointsData?.(pts);
       globe.setPointOfView?.({ lat: pin.lat, lng: pin.lng, altitude: 1.4 }, 1000) ??
         globe.pointOfView?.({ lat: pin.lat, lng: pin.lng, altitude: 1.4 }, 1000);
     } else {
       globe.pointsData?.([]);
     }
-  }, [pin]); */
+  }, [pin]);
 
   return <div ref={containerRef} style={{ position: "absolute", inset: 0 }} />;
 }

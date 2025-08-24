@@ -7,15 +7,12 @@ import Loader from "@/components/Loader";
 // Globe nur im Browser laden
 const GlobeView = dynamic(() => import("@/components/GlobeView"), { ssr: false });
 
-type GlobeAPI = { flyTo: (lat: number, lng: number, altitude?: number, ms?: number) => void };
-
-// Fragen aus der externen Datei laden
+// Fragen
 import { Questions, type Question } from "../data/questions";
+import type { GlobeAPI } from "@/components/GlobeView";
 
 type Phase = "loading" | "intro" | "game" | "result";
-type AnswerState = "idle" | "confirmed"; 
-// idle: Auswahl möglich
-// confirmed: Antwort bestätigt, Fact sichtbar, „Weiter“-Button erscheint
+type AnswerState = "idle" | "confirmed";
 
 const FLY_ALTITUDE = 1.4;
 const FLY_MS = 1200;
@@ -35,6 +32,9 @@ export default function Home() {
   const current: Question = Questions[qIndex];
 
   const resetToIntro = useCallback(() => {
+    // Pins weg beim Zurück in den Startscreen
+    apiRef.current?.clearPin?.();
+
     setPhase("intro");
     setQIndex(0);
     setSelected(null);
@@ -45,29 +45,48 @@ export default function Home() {
   const handleReady = useCallback((api: GlobeAPI) => {
     apiRef.current = api;
     setGlobeReady(true);
-    // kurze Micro-Delay nur für sanfteren Loader-Exit
     setTimeout(() => {
       setPhase((p) => (p === "loading" ? "intro" : p));
     }, 250);
   }, []);
 
-  const onConfirm = useCallback(() => {
-    if (selected === null || state !== "idle") return;
+  // Antworten bestätigen per Klick -> fliegen -> DANN Pin setzen
+  const handleAnswerClick = useCallback(
+    async (i: number) => {
+      if (state !== "idle") return;
 
-    // Score aktualisieren
-    const isCorrect = selected === current.correctIndex;
-    if (isCorrect) setCorrectCount((c) => c + 1);
+      setSelected(i);
 
-    // Flug starten
-    apiRef.current?.flyTo(current.location.lat, current.location.lng, FLY_ALTITUDE, FLY_MS);
+      const isCorrect = i === current.correctIndex;
+      if (isCorrect) setCorrectCount((c) => c + 1);
 
-    // UI-Status: Antworten sperren, Fact anzeigen
-    setState("confirmed");
-  }, [current, selected, state]);
+      // UI-Status sofort umschalten (Fact anzeigen, Buttons sperren)
+      setState("confirmed");
+
+      // zur richtigen Lösung fliegen
+      await apiRef.current?.flyTo(
+        current.location.lat,
+        current.location.lng,
+        FLY_ALTITUDE,
+        FLY_MS
+      );
+
+      //let color = isCorrect ? "green" : "red";
+      // NACH dem Flug: Pin setzen
+      apiRef.current?.setPin?.({
+        lat: current.location.lat,
+        lng: current.location.lng,
+        label: current.question,
+        color: isCorrect ? "#00d492" : "#ff637e",
+      });
+    },
+    [current, state]
+  );
 
   const onNext = useCallback(() => {
-    // Wenn letzte Frage: Ergebnis anzeigen
+    // Wenn letzte Frage: Ergebnis anzeigen + Pin löschen
     if (qIndex + 1 >= total) {
+      apiRef.current?.clearPin?.();
       setPhase("result");
       return;
     }
@@ -96,12 +115,12 @@ export default function Home() {
             <button
               className="rounded-xl bg-[var(--col-secondary)] px-5 py-2 font-medium text-white"
               onClick={() => {
-                // vollständiger Reset beim Start
                 setPhase("game");
                 setQIndex(0);
                 setSelected(null);
                 setState("idle");
                 setCorrectCount(0);
+                apiRef.current?.clearPin?.(); // sicherstellen, dass keine alten Pins da sind
               }}
             >
               Spiel starten
@@ -118,30 +137,37 @@ export default function Home() {
             <div className="mb-1 text-xs uppercase tracking-wide text-slate-500">
               Frage {qIndex + 1} / {total}
             </div>
-            <h2 className="text-lg font-semibold text-slate-900">
-              {current.question}
-            </h2>
+            <h2 className="text-lg font-semibold text-slate-900">{current.question}</h2>
           </div>
 
           {/* Antworten & Controls unten */}
           <div className="pointer-events-auto absolute inset-x-0 bottom-4 mx-auto grid w-[min(900px,95vw)] gap-2">
             {current.answers.map((opt, i) => {
               const isSel = selected === i;
-              const isCorrect = state === "confirmed" && i === current.correctIndex;
-              const isWrong = state === "confirmed" && isSel && i !== current.correctIndex;
+              const isCorrectNow = state === "confirmed" && i === current.correctIndex;
+              const isWrongNow = state === "confirmed" && isSel && i !== current.correctIndex;
 
-              let classes =
-                "rounded-xl border-10 border-[var(--col-light)] px-4 py-3 text-left text-slate-900 bg-[var(--col-light)] shadow transition-colors";
-              if (state === "idle") classes += isSel ? " border-[var(--col-secondary)]" : " border-[var(--col-light)]";
-              if (isCorrect) classes += " border-emerald-400 bg-emerald-50";
-              if (isWrong) classes += " border-rose-400 bg-rose-50";
+              let base =
+                "rounded-xl border-[10px] px-4 py-3 text-left text-slate-900 bg-[var(--col-light)] shadow transition-colors";
+
+              const border =
+                state === "idle"
+                  ? (isSel ? "border-[var(--col-secondary)]" : "border-[var(--col-light)]")
+                  : isCorrectNow
+                    ? "border-[var(--col-correct)] bg-emerald-50"
+                    : isWrongNow
+                      ? "border-rose-400 bg-rose-50"
+                      : "border-[var(--col-light)]";
+
+              const classes = `${base} ${border}`;
+
 
               return (
                 <button
                   key={`${opt}-${i}`}
                   className={classes}
-                  disabled={state !== "idle"}
-                  onClick={() => state === "idle" && setSelected(i)}
+                  disabled={state !== "idle"}         // nach Klick gesperrt
+                  onClick={() => handleAnswerClick(i)} // SOFORT bestätigen
                 >
                   {opt}
                 </button>
@@ -150,21 +176,12 @@ export default function Home() {
 
             <div className="mt-2 flex gap-2">
               {state === "idle" ? (
-                <>
-                  <button
-                    className="rounded-xl bg-cyan-500 px-4 py-2 font-medium text-white disabled:opacity-50"
-                    disabled={selected === null}
-                    onClick={onConfirm}
-                  >
-                    Bestätigen
-                  </button>
-                  <button
-                    className="rounded-xl border border-slate-400 px-4 py-2 font-medium text-slate-900"
-                    onClick={resetToIntro}
-                  >
-                    Zurück
-                  </button>
-                </>
+                <button
+                  className="rounded-xl border border-slate-400 px-4 py-2 font-medium text-slate-900"
+                  onClick={resetToIntro}
+                >
+                  Zurück
+                </button>
               ) : (
                 <>
                   <button
@@ -202,13 +219,8 @@ export default function Home() {
               Du hast <span className="font-semibold">{correctCount}</span> von{" "}
               <span className="font-semibold">{total}</span> Fragen richtig beantwortet.
             </p>
-            <p className="mb-5 text-slate-600">
-              ({Math.round((correctCount / Math.max(1, total)) * 100)}%)
-            </p>
-            <button
-              className="rounded-xl bg-cyan-500 px-5 py-2 font-medium text-white"
-              onClick={resetToIntro}
-            >
+            <p className="mb-5 text-slate-600">({Math.round((correctCount / Math.max(1, total)) * 100)}%)</p>
+            <button className="rounded-xl bg-cyan-500 px-5 py-2 font-medium text-white" onClick={resetToIntro}>
               Nochmal spielen!
             </button>
           </div>
