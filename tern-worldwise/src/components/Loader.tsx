@@ -3,11 +3,14 @@
 import { useEffect, useRef, useState } from "react";
 
 export default function Loader({ isReady }: { isReady: boolean }) {
-  // *────────────────────────────────
-  // * LEARN: userState()
-  // * progress: State speicher,
-  // * setProgress: Funktion um State zu ändern
-  // *────────────────────────────────
+ // *────────────────────────────────
+// * LEARN: useState()
+// * progress: State-Wert, kann alles sein (Zahl, String, Objekt, Typ …)
+// * setProgress: Updater-Funktion für den State
+// * Tipp: State kann auch ein Objekt-Typ sein (z. B. {id: number, name: string})
+// *       Änderung einzelner Felder immer mit Spread und prev (ist nur ein Variablenname):
+// *       setProgress(prev => ({ ...prev, name: "Bob" }))
+// *────────────────────────────────
   const [progress, setProgress] = useState(0);
 
   // *────────────────────────────────

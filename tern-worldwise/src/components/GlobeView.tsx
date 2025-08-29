@@ -5,6 +5,7 @@ import { Vector3 } from "three";
 
 export type Pin = { lat: number; lng: number; label?: string; color?: string };
 
+
 export type GlobeAPI = {
   flyTo: (lat: number, lng: number, altitude?: number, ms?: number) => void;
   setPin: (pin: Pin, opts?: { altitude?: number; radius?: number }) => void;
@@ -21,9 +22,40 @@ const GLOBE_POS_START: Vector3 = new Vector3(0, 0, 300);
 
 let flags: Pin[] = [];
 
+// *────────────────────────────────
+// * LEARN: // * LEARN: In React teilt man Logik mit Hooks (Funktionen wie useState, useEffect),
+// * statt über Vererbung. Ein eigener Hook kapselt Logik und kann in beliebigen
+// * Komponenten wiederverwendet werden:
+//
+// *   function useCounter(initial = 0) {
+// *     const [count, setCount] = React.useState(initial);
+// *     const inc = () => setCount(c => c + 1);
+// *     return { count, inc };
+// *   }
+//
+// *   function Counter() {
+// *     const { count, inc } = useCounter();
+// *     return <button onClick={inc}>Count: {count}</button>;
+// *   }
+// *
+// *
+// * Wann State, Variable oder Ref?
+// * - Soll sich die UI bei Änderung neu rendern? → useState
+// *   (z. B. count, Name, Input, Modal offen)
+// * - Nur temporär in einer Funktion, ohne Render-Effekt? → normale Variable
+// *   (z. B. Schleifenwert, lokale Berechnung)
+// * - Wert soll über Renders bestehen, aber kein Re-Render auslösen? → useRef
+// *   (z. B. DOM-Ref, Timer-ID, Three.js-Objekt)
+// * 
+// *────────────────────────────────
 export default function GlobeView({ pin, onReady }: Props) {
   const containerRef = useRef<HTMLDivElement | null>(null);
-  const globeRef = useRef<any>(null); // three-globe Instanz
+  const globeRef = useRef<any>(null); // three-globe Instanz#
+  
+  const RADIUS = 100;
+  const CENTER = new Vector3(0, 0, 0);
+  const LON_OFFSET_DEG = -90;
+  const FINAL_ZOOM = 0.5;
 
   // (A) onReady als Ref halten
   const onReadyRef = useRef<Props["onReady"]>(onReady);
@@ -40,6 +72,8 @@ export default function GlobeView({ pin, onReady }: Props) {
     let scene: any;
     let camera: any;
     let raf = 0;
+
+    
 
     let onResize: () => void;
     let cleanupExtraListeners = () => {};
@@ -83,7 +117,13 @@ export default function GlobeView({ pin, onReady }: Props) {
       dirLight.position.set(1, 0.7, 1);
       scene.add(dirLight);
 
-      // --- Globe-Instanz
+      /*
+      ╔═════════════════════════════════════════════════════════════════════════════╗
+      ║                                                                             ║
+      ║                               GLOBE                                         ║
+      ║                                                                             ║
+      ╚═════════════════════════════════════════════════════════════════════════════╝
+      */
       const globe: any = new ThreeGlobe()
         .globeImageUrl("/textures/earth.jpg")
         .bumpImageUrl("/textures/earth-bump.jpg")
@@ -91,18 +131,21 @@ export default function GlobeView({ pin, onReady }: Props) {
         .atmosphereColor("#6BB6E9")
         .atmosphereAltitude(0.2);
 
-      // Default-Point-Settings
-      globe.pointAltitude?.(0.05);
-      globe.pointColor?.(() => "#6FE7E7");
-      globe.pointRadius?.(0.4);
-
       scene.add(globe);
       globeRef.current = globe;
       (globe as any).controls?.(controls);
       (globe as any).setPointOfView?.(camera);
       camera.position.set(GLOBE_POS_START.x, GLOBE_POS_START.y, GLOBE_POS_START.z);
 
-      // Ländergrenzen
+      /* -------------------------------------------------------------------------- */
+
+      /*
+      ╔═════════════════════════════════════════════════════════════════════════════╗
+      ║                                                                             ║
+      ║                               LÄNDER                                        ║
+      ║                                                                             ║
+      ╚═════════════════════════════════════════════════════════════════════════════╝
+      */
       fetch("/data/countries.geo.json")
         .then((r) => r.json())
         .then((geo) => {
@@ -115,6 +158,8 @@ export default function GlobeView({ pin, onReady }: Props) {
         })
         .catch(() => {});
 
+      /* -------------------------------------------------------------------------- */
+
       // Resize
       onResize = () => {
         const { clientWidth, clientHeight } = el;
@@ -123,12 +168,6 @@ export default function GlobeView({ pin, onReady }: Props) {
         camera.updateProjectionMatrix();
       };
       window.addEventListener("resize", onResize);
-
-      // Easing / Math
-      const RADIUS = 100;
-      const CENTER = new Vector3(0, 0, 0);
-      const LON_OFFSET_DEG = -90;
-      const FINAL_ZOOM = 0.5;
 
       const easeInOutCubic = (t: number) =>
         t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
@@ -159,6 +198,14 @@ export default function GlobeView({ pin, onReady }: Props) {
         return v0.clone().multiplyScalar(Math.cos(theta)).add(v2.multiplyScalar(Math.sin(theta)));
       }
 
+
+      /*
+      ╔═════════════════════════════════════════════════════════════════════════════╗
+      ║                                                                             ║
+      ║                               FlyTo                                         ║
+      ║                                                                             ║
+      ╚═════════════════════════════════════════════════════════════════════════════╝
+      */
       function flyTo(lat: number, lng: number, altitude = 1.4, ms = 1200) {
         const targetDir = latLngToVec3(lat, lng, 1).normalize();
         const startDist = camera.position.length();
@@ -195,7 +242,32 @@ export default function GlobeView({ pin, onReady }: Props) {
         activeTween = requestAnimationFrame(step);
       }
 
-      // ---- NEU: setPin API
+      /* -------------------------------------------------------------------------- */
+
+      /*
+      ╔═════════════════════════════════════════════════════════════════════════════╗
+      ║                                                                             ║
+      ║                               PIN                                           ║
+      ║                                                                             ║
+      ╚═════════════════════════════════════════════════════════════════════════════╝
+      */
+    // *────────────────────────────────
+    // * LEARN: Ein Custom Hook ist wie eine kleine "öffentliche API".
+    // * Er gibt State + Funktionen zurück, die jede Komponente nutzen kann,
+    // * statt eine Klasse mit public Methoden zu bauen.
+    //
+    // *   function useCounter(initial = 0) {
+    // *     const [count, setCount] = React.useState(initial);
+    // *     const inc = () => setCount(c => c + 1);
+    // *     return { count, inc }; // quasi public API
+    // *   }
+    //
+    // *   function Counter() {
+    // *     const { count, inc } = useCounter();
+    // *     return <button onClick={inc}>Count: {count}</button>;
+    // *   }
+    // * 
+    // *────────────────────────────────
       function setPin(pin: Pin, opts?: { altitude?: number; radius?: number }) {
         // dedupe nach Koordinate (nicht .includes, das vergleicht Objekt-Referenzen)
         const key = `${pin.lat.toFixed(6)},${pin.lng.toFixed(6)}`;
@@ -217,10 +289,20 @@ export default function GlobeView({ pin, onReady }: Props) {
         globe.pointsData?.([]);
       }
 
-      // API nach außen geben
+      /* -------------------------------------------------------------------------- */
+
+      /*
+      ╔═══════════════════════════════════════╗
+      ║              API NACH AUßEN           ║
+      ╚═══════════════════════════════════════╝
+      */
       onReadyRef.current?.({ flyTo, setPin, clearPin });
 
-      // Render-Loop
+      /*
+      ╔═══════════════════════════════════════╗
+      ║              RENDER LOOP              ║
+      ╚═══════════════════════════════════════╝
+      */
       const animate = () => {
         if (disposed) return;
         raf = requestAnimationFrame(animate);
@@ -229,12 +311,17 @@ export default function GlobeView({ pin, onReady }: Props) {
       };
       animate();
 
-      // Cleanup
+      /*
+      ╔═══════════════════════════════════════╗
+      ║                 CLEANUP               ║
+      ╚═══════════════════════════════════════╝
+      */
       cleanupExtraListeners = () => {
         window.removeEventListener("resize", onResize);
         if (activeTween) cancelAnimationFrame(activeTween);
       };
-    })();
+    })
+    ();
 
     return () => {
       disposed = true;

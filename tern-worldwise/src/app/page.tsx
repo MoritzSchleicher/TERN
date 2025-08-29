@@ -11,12 +11,27 @@ const GlobeView = dynamic(() => import("@/components/GlobeView"), { ssr: false }
 import { Questions, type Question } from "../data/questions";
 import type { GlobeAPI } from "@/components/GlobeView";
 
-type Phase = "loading" | "intro" | "game" | "result";
-type AnswerState = "idle" | "confirmed";
+export type Phase = "loading" | "intro" | "game" | "result";
+export type AnswerState = "idle" | "confirmed";
 
 const FLY_ALTITUDE = 1.4;
 const FLY_MS = 1200;
 
+// *────────────────────────────────
+// * LEARN: In React erbt man nicht von Components,
+// * stattdessen kombiniert man sie (Komposition) und
+// * teilt Logik über Hooks – nicht über Vererbung. 
+// * Beispiel: Ein spezieller Button wird durch Zusammensetzen erstellt,
+// * nicht durch Erben von einer Button-Klasse:
+// *
+// * function Button({ label, style }) {
+// *   return <button style={style}>{label}</button>;
+// * }
+//
+// * function DangerButton({ label }) {
+// *   return <Button label={label} style={{ color: "red" }} />;
+// * }
+// *────────────────────────────────
 export default function Home() {
   const [phase, setPhase] = useState<Phase>("loading");
   const [globeReady, setGlobeReady] = useState(false);
