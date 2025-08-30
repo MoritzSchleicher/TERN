@@ -1,8 +1,9 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import { Geist, Geist_Mono, Manrope, Newsreader } from "next/font/google";
 import "./globals.css";
 /* project colors */
 import "../styles/project_design.css"
+import "../styles/common.css"
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -13,6 +14,22 @@ const geistMono = Geist_Mono({
   variable: "--font-geist-mono",
   subsets: ["latin"],
 });
+
+const manrope = Manrope({
+  variable: "--font-manrope",
+  subsets: ["latin"],
+  display: "swap",
+  fallback: ["system-ui", "sans-serif"],
+});
+
+const newsreader = Newsreader({
+  variable: "--font-newsreader",
+  subsets: ["latin"],
+  display: "swap",
+  fallback: ["system-ui", "sans-serif"],
+});
+
+
 
 export const metadata: Metadata = {
   title: "Create Next App",
@@ -25,9 +42,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" className={`${manrope.variable} ${newsreader.variable} ${geistSans.variable} ${geistMono.variable} antialiased`} >
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`} suppressHydrationWarning
+        suppressHydrationWarning
       >
         {children}
       </body>

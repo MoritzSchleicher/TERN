@@ -7,9 +7,16 @@
   --col-correct: #00d492;
   --col-wrong: #ff637e;
 
+  --font-col-dark: #1B292B;      /* text schwarz */
+
+  --border-radius-main: 8px;
+
   /* abgeleitete Variablen */
   --bg-overlay: rgba(255, 252, 249, 0.9); /* Off-White mit Transparenz */
+
   --text-main: var(--col-dark);
   --text-light: var(--col-light);
   
+  --font-main: var(--font-manrope);        /* Manrope */
+  --font-second: var(--font-newsreader);   /* Newsreader */
 }

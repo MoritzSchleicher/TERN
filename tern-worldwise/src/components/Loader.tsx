@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 
-export default function Loader({ isReady }: { isReady: boolean }) {
+export default function Loader({ showIsReady: show_is_ready }: { showIsReady: boolean }) {
  // *────────────────────────────────
 // * LEARN: useState()
 // * progress: State-Wert, kann alles sein (Zahl, String, Objekt, Typ …)
@@ -31,7 +31,7 @@ export default function Loader({ isReady }: { isReady: boolean }) {
   // * dafür dann useEffect mit fetch 
   // *────────────────────────────────
   useEffect(() => {
-    if (isReady) {
+    if (show_is_ready) {
       setProgress(100);          
       return;                    
     }
@@ -57,7 +57,7 @@ export default function Loader({ isReady }: { isReady: boolean }) {
     return () => {
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
     };
-  }, [isReady]); // Effekt reagiert auf Änderungen von `isReady`
+  }, [show_is_ready]); // Effekt reagiert auf Änderungen von `isReady`
 
   const clamped = Math.min(100, Math.round(progress));
 

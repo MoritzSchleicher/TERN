@@ -11,10 +11,6 @@ const GlobeView = dynamic(() => import("@/components/GlobeView"), { ssr: false }
 import { Questions, type Question } from "../data/questions";
 import type { GlobeAPI } from "@/components/GlobeView";
 import { GameState, GlobeState } from "@/types/main_game_types";
-import Game from "@/components/Game";
-import ScreenMenu from "@/components/screens/ScreenMenu";
-import ScreenRound from "@/components/screens/ScreenRound";
-import ScreenResult from "@/components/screens/ScreenResult";
 
 export type Phase = "loading" | "intro" | "game" | "result";
 export type AnswerState = "idle" | "confirmed";
@@ -38,72 +34,9 @@ const FLY_MS = 1200;
 // * }
 // *────────────────────────────────
 export default function MainGame() {
-  const [game_state, set_game_state] = useState<GameState>(GameState.LOADING);
-  const [globe_state, set_globe_state] = useState<GlobeState>(GlobeState.LOADING);
-
-  const apiRef = useRef<GlobeAPI | null>(null);
-
-  const handle_globe_ready = useCallback((api: GlobeAPI) => {
-    apiRef.current = api;
-    set_globe_state(GlobeState.READY);
-    set_game_state(GameState.MENU);
-  }, []);
-
-  const handle_start_clicked = useCallback(() => {
-    set_game_state(GameState.ROUND);
-    set_globe_state(GlobeState.AUTO_MOVING);
-  }, []); 
-
-  const handle_end_clicked = useCallback(() => {
-    console.log("end clicked");
-  }, []); 
-
-  const handle_answer_clicked = useCallback(() => {
-    console.log("answer clicked");
-  }, []); 
-
-  const handle_play_again_clicked = useCallback(() => {
-    console.log("play again clicked");
-  }, []); 
-
-  const handle_back_clicked = useCallback(() => {
-    console.log("back clicked");
-  }, []); 
-
-  return (
-    <main className="relative h-[100dvh] w-full bg-black">
-      {/* 3D-Layer */}
-      <GlobeView onReady={handle_globe_ready} />
-      {/* Progressbar */}
-      {/* TODO: Loader braucht eine update={ } mit dem loading-state vom globe */}
-      {game_state == GameState.LOADING && <Loader showIsReady={globe_state == GlobeState.READY} />}
-      {/* Menu */}
-      {game_state == GameState.MENU && 
-        <ScreenMenu
-          onStart={ handle_start_clicked }
-          onEnd = { handle_end_clicked }
-        />
-      }
-      {/* Round */}
-      {game_state == GameState.ROUND &&
-        <ScreenRound
-          onAnswer = { handle_answer_clicked }
-        />
-      }
-      {/* Result */}
-      {game_state == GameState.RESULT &&
-        <ScreenResult
-          onPlayAgain = { handle_play_again_clicked }
-          onBack = { handle_back_clicked }
-        />
-      }
-      
-    </main>
-  )
-
-  /* ooooooooooooooooooooooooooooooold */
   const [phase, setPhase] = useState<Phase>("loading");
   const [globeReady, setGlobeReady] = useState(false);
+  const apiRef = useRef<GlobeAPI | null>(null);
 
   // Quiz-State
   const [qIndex, setQIndex] = useState(0);
@@ -182,7 +115,7 @@ export default function MainGame() {
   return (
     <main className="relative h-[100dvh] w-full bg-black">
       {/* 3D-Layer */}
-      <GlobeView onReady={handle_globe_ready} />
+      <GlobeView onReady={handleReady} />
 
       {/* Phase 1: Loader */}
       {phase === "loading" && <Loader showIsReady={globeReady} />}
