@@ -1,0 +1,45 @@
+@font-face {
+  font-family: 'tern_icons';
+  src:  url('fonts/tern_icons.eot?ai7jo9');
+  src:  url('fonts/tern_icons.eot?ai7jo9#iefix') format('embedded-opentype'),
+    url('fonts/tern_icons.ttf?ai7jo9') format('truetype'),
+    url('fonts/tern_icons.woff?ai7jo9') format('woff'),
+    url('fonts/tern_icons.svg?ai7jo9#tern_icons') format('svg');
+  font-weight: normal;
+  font-style: normal;
+  font-display: block;
+}
+
+i {
+  /* use !important to prevent issues with browser extensions that change fonts */
+  font-family: 'tern_icons' !important;
+  speak: never;
+  font-style: normal;
+  font-weight: normal;
+  font-variant: normal;
+  text-transform: none;
+  line-height: 1;
+
+  /* Better Font Rendering =========== */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.tern_icon_Cross:before {
+  content: "\ea0f";
+}
+.tern_icon_Check:before {
+  content: "\ea10";
+}
+.tern_icon_SoundOn:before {
+  content: "\ea27";
+}
+.tern_icon_SoundOff:before {
+  content: "\ea2a";
+}
+.tern_icon_Pause:before {
+  content: "\e900";
+}
+.tern_icon_Settings:before {
+  content: "\e904";
+}

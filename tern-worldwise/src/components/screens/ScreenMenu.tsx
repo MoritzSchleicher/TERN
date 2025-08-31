@@ -1,6 +1,7 @@
 // components/ScreenMenu.tsx
 import React from "react";
 import { UIOverlay } from "../ui/UIOverlay";
+import { UIMainCard } from "../ui/UIMainCard";
 
 type ScreenMenuProps = {
   onStart: () => void;
@@ -10,53 +11,51 @@ type ScreenMenuProps = {
 export default function ScreenMenu({ onStart, onEnd }: ScreenMenuProps) {
   return (
     <UIOverlay>
-        <div id="wrapper" className="
-                pointer-events-auto
-                absolute
-                left-1/2
-                w-[min(300px,20.8vw)]
-                h-[50.19vh]
-                top-[21.45vh]
-                -translate-x-1/2
-                grid
-                grid-rows-[auto_auto]
-                grid-cols-[100%]
-                place-items-center
-                gap-4
-
-                rounded-[var(--border-radius-main)]
-                bg-[var(--col-light)]
-                p-6
-                text-center
-                shadow-xl
-                text-[var(--font-col-dark)]
-            ">
-            <div>
-                <h1>
-                    Willkommen bei TERN 🌍
-                </h1>
-                <h2>
-                    Teste dein Weltwissen auf der 3D-Globe. Klicke auf „Spiel starten“, um loszulegen.
-                </h2>
-            </div>
-            
-            <div className="
-                    flex
-                    flex-col
-                    items-center
-                    justify-end
-                    gap-3
+      <UIMainCard>
+        <div className="
+          grid
+          grid-rows-[auto_auto]
+          grid-cols-[100%]
+          place-items-center
+          gap-4
+        ">
+          <div>
+            <h1>
+                Willkommen bei TERN
+            </h1>
+            <h2>
+                Teste dein Weltwissen auf der 3D-Globe. Klicke auf „Spiel starten“, um loszulegen.
+            </h2>
+          </div>
+          <div className="
+                  flex
+                  flex-col
+                  items-center
+                  justify-end
+                  gap-3
+                  w-full
+                  h-full
+              ">
+              <button
+                  className="
                     w-full
-                    h-full
-                ">
-                <button
-                    className="w-full h-[5vh] cursor-pointer rounded-xl bg-[var(--col-secondary)] px-5 py-2 font-medium text-white "
-                    onClick={onStart}
-                >
-                    Spiel starten
-                </button>
-            </div>
+                    h-[5vh]
+                    cursor-pointer
+                    rounded-xl
+                    bg-[var(--col-secondary)]
+                    px-5
+                    py-2
+                    font-medium
+                    text-white 
+                    cursor-pointer
+                    "
+                  onClick={onStart}
+              >
+                  Spiel starten
+              </button>
+          </div>
         </div>
+      </UIMainCard>
     </UIOverlay>
   );
 }

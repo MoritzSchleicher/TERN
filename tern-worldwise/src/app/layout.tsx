@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono, Manrope, Newsreader } from "next/font/google";
 import "./globals.css";
-/* project colors */
 import "../styles/project_design.css"
 import "../styles/common.css"
+import "../../public/icons/style.css"
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -15,15 +15,15 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-const manrope = Manrope({
-  variable: "--font-manrope",
+const newsreader = Newsreader({
+  variable: "--font-newsreader",
   subsets: ["latin"],
   display: "swap",
   fallback: ["system-ui", "sans-serif"],
 });
 
-const newsreader = Newsreader({
-  variable: "--font-newsreader",
+const manrope = Manrope({
+  variable: "--font-manrope",
   subsets: ["latin"],
   display: "swap",
   fallback: ["system-ui", "sans-serif"],
@@ -42,7 +42,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${manrope.variable} ${newsreader.variable} ${geistSans.variable} ${geistMono.variable} antialiased`} >
+    <html lang="en" className={`${newsreader.variable} ${manrope.variable} ${geistSans.variable} ${geistMono.variable} antialiased`} >
       <body
         suppressHydrationWarning
       >
