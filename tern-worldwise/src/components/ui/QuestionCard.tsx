@@ -34,7 +34,7 @@ export function QuestionCard() {
             !font-second
             content-center
             w-full
-            pb-[10px]
+            pb-[5px]
         ">
             Geschichte
         </span>

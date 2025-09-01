@@ -14,7 +14,6 @@ export function UIMainCard({ children }: { children: React.ReactNode }) {
         bg-[var(--col-light)]
         p-6
         text-center
-        shadow-xl
         text-[var(--font-col-dark)]
         grid
         
