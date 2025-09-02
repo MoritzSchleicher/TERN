@@ -68,7 +68,7 @@ export default function ScreenResult({ onPlayAgain, onBack, score, total }: Scre
                     text-white 
                     cursor-pointer
                     "
-                  onClick={onPlayAgain}
+                  onClick={onBack}
               >
                   Zurück
               </button>

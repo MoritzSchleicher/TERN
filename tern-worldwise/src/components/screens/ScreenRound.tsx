@@ -42,9 +42,10 @@ export default function ScreenRound({
     <UIOverlay>
         <Archive />
         <QuestionCard
-          indicator = {`${index}/${total}`}
+          indicator = {`${index+1}/${total}`}
           question_text = {question.question}
           category = {question.category as string} 
+          round_state={round_state}
         />
         <BottomUI>
           <div className="

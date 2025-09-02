@@ -6,10 +6,10 @@ export enum GameState {
 }
 
 export enum RoundState {
-    QUESTION,
-    RESOLUTION,
-    FLIGHT,
-    NUGGET
+    QUESTION = "question",
+    RESOLUTION = "resoltion",
+    FLIGHT = "flight",
+    NUGGET = "nugget"
 }
 
 export enum GlobeState {
