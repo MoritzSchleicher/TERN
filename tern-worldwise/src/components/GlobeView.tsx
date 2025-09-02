@@ -1,13 +1,16 @@
 "use client";
 
+import { Constants } from "@/constants/general_constants";
+import { GlobeState } from "@/types/main_game_types";
 import { useEffect, useRef } from "react";
-import { Vector3 } from "three";
+import { PerspectiveCamera, Vector3 } from "three";
+import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
 
 export type Pin = { lat: number; lng: number; label?: string; color?: string };
 
 
 export type GlobeAPI = {
-  flyTo: (lat: number, lng: number, altitude?: number, ms?: number) => void;
+  flyTo: (lat: number, lng: number, altitude?: number, ms?: number) => Promise<void>;
   setPin: (pin: Pin, opts?: { altitude?: number; radius?: number }) => void;
   clearPin: () => void;
 };
@@ -15,10 +18,9 @@ export type GlobeAPI = {
 export type Props = {
   pin?: Pin; // optional weiterhin als Prop nutzbar
   onReady?: (api: GlobeAPI) => void;
+  globe_state: GlobeState
 };
 
-const ROTATION_SPEED = -0.25;
-const GLOBE_POS_START: Vector3 = new Vector3(0, 0, 300);
 
 let flags: Pin[] = [];
 
@@ -48,20 +50,19 @@ let flags: Pin[] = [];
 // *   (z. B. DOM-Ref, Timer-ID, Three.js-Objekt)
 // * 
 // *────────────────────────────────
-export default function GlobeView({ pin, onReady }: Props) {
+export default function GlobeView({ pin, onReady, globe_state = GlobeState.READY }: Props) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const globeRef = useRef<any>(null); // three-globe Instanz#
-  
-  const RADIUS = 100;
-  const CENTER = new Vector3(0, 0, 0);
-  const LON_OFFSET_DEG = -90;
-  const FINAL_ZOOM = 0.5;
+
+  const cameraRef = useRef<PerspectiveCamera | null>(null);
+  const controlsRef = useRef<OrbitControls | null>(null);
 
   // (A) onReady als Ref halten
   const onReadyRef = useRef<Props["onReady"]>(onReady);
   useEffect(() => {
     onReadyRef.current = onReady;
   }, [onReady]);
+
 
   useEffect(() => {
     const el = containerRef.current;
@@ -72,11 +73,10 @@ export default function GlobeView({ pin, onReady }: Props) {
     let scene: any;
     let camera: any;
     let raf = 0;
-
     
-
     let onResize: () => void;
     let cleanupExtraListeners = () => {};
+    let resolveCurrentFlight: (() => void) | null = null;
     let activeTween = 0;
 
     (async () => {
@@ -102,15 +102,17 @@ export default function GlobeView({ pin, onReady }: Props) {
 
       camera = new PerspectiveCamera(45, el.clientWidth / el.clientHeight, 0.1, 1000);
       camera.position.set(0, 0, 250);
+      cameraRef.current = camera;
 
       const controls = new OrbitControls(camera, renderer.domElement);
+      controlsRef.current = controls;
       controls.enableDamping = true;
       controls.dampingFactor = 0.05;
       controls.minDistance = 200;
       controls.maxDistance = 400;
       controls.enablePan = false;
       controls.autoRotate = true;
-      controls.autoRotateSpeed = ROTATION_SPEED;
+      controls.autoRotateSpeed = Constants.GLOBE.ROTATION_SPEED;
 
       scene.add(new AmbientLight(0xffffff, 0.5));
       const dirLight = new DirectionalLight(0xfff5ec, 0.7);
@@ -135,7 +137,7 @@ export default function GlobeView({ pin, onReady }: Props) {
       globeRef.current = globe;
       (globe as any).controls?.(controls);
       (globe as any).setPointOfView?.(camera);
-      camera.position.set(GLOBE_POS_START.x, GLOBE_POS_START.y, GLOBE_POS_START.z);
+      camera.position.set(Constants.GLOBE.START_POS.x, Constants.GLOBE.START_POS.y, Constants.GLOBE.START_POS.z);
 
       /* -------------------------------------------------------------------------- */
 
@@ -173,13 +175,13 @@ export default function GlobeView({ pin, onReady }: Props) {
         t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
 
       function altitudeToDistance(altitude: number) {
-        return RADIUS * altitude * 2.2;
+        return Constants.GLOBE.RADIUS * altitude * 2.2;
       }
 
-      function latLngToVec3(lat: number, lng: number, r = RADIUS) {
+      function latLngToVec3(lat: number, lng: number, r = Constants.GLOBE.RADIUS) {
         const DEG2RAD = Math.PI / 180;
         const latRad = lat * DEG2RAD;
-        const lngRad = (lng + LON_OFFSET_DEG) * DEG2RAD;
+        const lngRad = (lng + Constants.GLOBE.LON_OFFSET_DEG) * DEG2RAD;
         const x = r * Math.cos(latRad) * Math.cos(lngRad);
         const y = r * Math.sin(latRad);
         const z = -r * Math.cos(latRad) * Math.sin(lngRad);
@@ -206,41 +208,53 @@ export default function GlobeView({ pin, onReady }: Props) {
       ║                                                                             ║
       ╚═════════════════════════════════════════════════════════════════════════════╝
       */
-      function flyTo(lat: number, lng: number, altitude = 1.4, ms = 1200) {
+      function flyTo(lat: number, lng: number, altitude = 1.4, ms = 1200): Promise<void> {
+        // Zielrichtung + Startwerte
         const targetDir = latLngToVec3(lat, lng, 1).normalize();
         const startDist = camera.position.length();
         const startDir = camera.position.clone().normalize();
         const endDist = altitudeToDistance(altitude);
 
+        // ggf. alten Flug abbrechen und Promise auflösen,
+        // damit keine "hängenden" awaits bleiben:
         if (activeTween) cancelAnimationFrame(activeTween);
+        resolveCurrentFlight?.();
+
         const t0 = performance.now();
 
-        const step = () => {
-          const t = Math.min(1, (performance.now() - t0) / ms);
-          const k = easeInOutCubic(t);
+        return new Promise<void>((resolve) => {
+          resolveCurrentFlight = resolve;
 
-          const dirNow = slerpVec3(startDir, targetDir, k);
-          let distNow = startDist + (endDist - startDist) * k;
+          const step = () => {
+            const t = Math.min(1, (performance.now() - t0) / ms);
+            const k = easeInOutCubic(t);
 
-          if (t > 0.7) {
-            const zoomPhase = (t - 0.7) / 0.3;
-            distNow *= 1 - FINAL_ZOOM * zoomPhase;
-          }
+            const dirNow = slerpVec3(startDir, targetDir, k);
+            let distNow = startDist + (endDist - startDist) * k;
 
-          camera.position.copy(dirNow.multiplyScalar(distNow));
-          controls.target.copy(CENTER);
-          camera.lookAt(CENTER);
-          controls.update();
+            if (t > 0.7) {
+              const zoomPhase = (t - 0.7) / 0.3;
+              distNow *= 1 - Constants.GLOBE.FINAL_ZOOM * zoomPhase;
+            }
 
-          /* (globe as any).setPointOfView?.(camera); */
+            camera.position.copy(dirNow.multiplyScalar(distNow));
+            controls.target.copy(Constants.GLOBE.CENTER);
+            camera.lookAt(Constants.GLOBE.CENTER);
+            controls.update();
 
-          if (t < 1) {
-            activeTween = requestAnimationFrame(step);
-          }
-        };
+            if (t < 1) {
+              activeTween = requestAnimationFrame(step);
+            } else {
+              activeTween = 0;
+              resolve();
+              resolveCurrentFlight = null;
+            }
+          };
 
-        activeTween = requestAnimationFrame(step);
-      }
+          activeTween = requestAnimationFrame(step);
+        }
+      );
+    }
 
       /* -------------------------------------------------------------------------- */
 
@@ -325,6 +339,9 @@ export default function GlobeView({ pin, onReady }: Props) {
 
     return () => {
       disposed = true;
+      if (activeTween) cancelAnimationFrame(activeTween);
+      resolveCurrentFlight?.();
+      resolveCurrentFlight = null;
       cancelAnimationFrame(raf);
       cleanupExtraListeners();
       if (renderer) {
@@ -340,6 +357,36 @@ export default function GlobeView({ pin, onReady }: Props) {
       globeRef.current = null;
     };
   }, []);
+
+  useEffect(() => {
+    const controls = controlsRef.current;
+    const camera = cameraRef.current;
+    if (!controls || !camera) return;
+
+    switch (globe_state) {
+      case GlobeState.LOCKED:
+        controls.autoRotate = false;
+        // optional richtig „locken“:
+        // controls.enableRotate = false;
+        // controls.enableZoom = false;
+        // controls.enablePan = false;
+        break;
+
+      case GlobeState.AUTO_MOVING:
+        // optional wieder freigeben:
+        // controls.enableRotate = true;
+        controls.autoRotate = true;
+        break;
+
+      case GlobeState.READY:
+        camera.position.set(Constants.GLOBE.START_POS.x, Constants.GLOBE.START_POS.y, Constants.GLOBE.START_POS.z);
+        camera.lookAt(0, 0, 0);
+        break;
+    }
+
+    controls.update();
+  }, [globe_state]);
+
 
   // Optional: weiterhin Prop-Änderungen spiegeln
   useEffect(() => {

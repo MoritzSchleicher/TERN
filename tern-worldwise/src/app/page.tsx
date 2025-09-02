@@ -8,19 +8,14 @@ import Loader from "@/components/Loader";
 const GlobeView = dynamic(() => import("@/components/GlobeView"), { ssr: false });
 
 // Fragen
-import { Questions, type Question } from "../data/questions";
+import { QuestionPool, type Question } from "../data/questions";
 import type { GlobeAPI } from "@/components/GlobeView";
-import { GameState, GlobeState } from "@/types/main_game_types";
+import { GameState, GlobeState, RoundState } from "@/types/main_game_types";
 import Game from "@/components/Game";
 import ScreenMenu from "@/components/screens/ScreenMenu";
 import ScreenRound from "@/components/screens/ScreenRound";
 import ScreenResult from "@/components/screens/ScreenResult";
-
-export type Phase = "loading" | "intro" | "game" | "result";
-export type AnswerState = "idle" | "confirmed";
-
-const FLY_ALTITUDE = 1.4;
-const FLY_MS = 1200;
+import { Constants } from "@/constants/general_constants";
 
 // *────────────────────────────────
 // * LEARN: In React erbt man nicht von Components,
@@ -38,11 +33,32 @@ const FLY_MS = 1200;
 // * }
 // *────────────────────────────────
 export default function MainGame() {
+  // Game-State
   const [game_state, set_game_state] = useState<GameState>(GameState.LOADING);
   const [globe_state, set_globe_state] = useState<GlobeState>(GlobeState.LOADING);
 
   const apiRef = useRef<GlobeAPI | null>(null);
+  
+  // *────────────────────────────────
+  // * LEARN: States in den Parent
+  // * Daten als Props nach unten, Änderungen per Callbacks nach oben;
+  // * “dumme” Kinder (z. B. ScreenRound) rendern nur, was der Parent vorgibt.
+  // *────────────────────────────────
+  const [qIndex, setQIndex] = useState(0);
+  const [selected_answer_id, setSelectedAnswer] = useState<number | null>(null);
+  const [round_state, set_round_state] = useState<RoundState>(RoundState.QUESTION);
+  const [score_count, setScoreCount] = useState(0);
 
+  const all_questions_length = QuestionPool.length;
+  const current_question: Question = QuestionPool[qIndex];
+
+  /*
+    ╔═════════════════════════════════════════════════════════════════════════════╗
+    ║                                                                             ║
+    ║                               HANDLERS                                      ║
+    ║                                                                             ║
+    ╚═════════════════════════════════════════════════════════════════════════════╝
+  */
   const handle_globe_ready = useCallback((api: GlobeAPI) => {
     apiRef.current = api;
     set_globe_state(GlobeState.READY);
@@ -52,28 +68,88 @@ export default function MainGame() {
   const handle_start_clicked = useCallback(() => {
     set_game_state(GameState.ROUND);
     set_globe_state(GlobeState.AUTO_MOVING);
+
+    setQIndex(0);
+    setSelectedAnswer(null);
+    set_round_state(RoundState.QUESTION);
+    set_globe_state(GlobeState.AUTO_MOVING);
+    setScoreCount(0);
+    apiRef.current?.clearPin?.();
   }, []); 
 
   const handle_end_clicked = useCallback(() => {
-    console.log("end clicked");
+    set_game_state(GameState.MENU);
+    set_globe_state(GlobeState.READY);
   }, []); 
 
-  const handle_answer_clicked = useCallback(() => {
-    console.log("answer clicked");
-  }, []); 
+  const handle_answer_clicked = useCallback(
+    async (answer_index: number) => {
+      if (round_state !== RoundState.QUESTION) return;
+
+      setSelectedAnswer(answer_index);
+
+      const is_correct = answer_index === current_question.correctIndex;
+      if (is_correct) setScoreCount((counter) => counter + 1);
+
+      // UI-Status sofort umschalten (Fact anzeigen, Buttons sperren)
+      set_round_state(RoundState.FLIGHT);
+      set_globe_state(GlobeState.LOCKED);
+
+      // zur richtigen Lösung fliegen
+      await apiRef.current?.flyTo(
+        current_question.location.lat,
+        current_question.location.lng,
+        Constants.GLOBE.FLY_ALTITUDE,
+        Constants.GLOBE.FLY_MS
+      );
+
+      // NACH dem Flug: Pin setzen
+      const pin_color = is_correct ? getCssVar("--col-correct") : getCssVar("--col-wrong");
+      apiRef.current?.setPin?.({
+        lat: current_question.location.lat,
+        lng: current_question.location.lng,
+        label: current_question.question,
+        color: pin_color,
+      });
+
+      set_round_state(RoundState.NUGGET);
+    },
+    [current_question, round_state]
+  );
+
+  const handle_next = useCallback(() => {
+    if (qIndex + 1 >= all_questions_length) {
+      apiRef.current?.clearPin?.();
+      set_game_state(GameState.RESULT);
+      return;
+    }
+    setQIndex(i => i + 1);
+    setSelectedAnswer(null);
+    set_round_state(RoundState.QUESTION);
+    set_globe_state(GlobeState.AUTO_MOVING);
+  }, [qIndex, all_questions_length]);
 
   const handle_play_again_clicked = useCallback(() => {
     console.log("play again clicked");
   }, []); 
+  /* -------------------------------------------------------------------------- */
 
-  const handle_back_clicked = useCallback(() => {
-    console.log("back clicked");
-  }, []); 
+  /*
+    ╔═════════════════════════════════════════════════════════════════════════════╗
+    ║                                                                             ║
+    ║                               HANDLERS                                      ║
+    ║                                                                             ║
+    ╚═════════════════════════════════════════════════════════════════════════════╝
+  */
+  function getCssVar(name: string, el: Element = document.documentElement) {
+    return getComputedStyle(el).getPropertyValue(name).trim();
+  }
+  /* -------------------------------------------------------------------------- */
 
   return (
     <main className="relative h-[100dvh] w-full bg-black">
       {/* 3D-Layer */}
-      <GlobeView onReady={handle_globe_ready} />
+      <GlobeView onReady={handle_globe_ready} globe_state={globe_state}/>
       {/* Progressbar */}
       {/* TODO: Loader braucht eine update={ } mit dem loading-state vom globe */}
       {game_state == GameState.LOADING && <Loader showIsReady={globe_state == GlobeState.READY} />}
@@ -81,234 +157,30 @@ export default function MainGame() {
       {game_state == GameState.MENU && 
         <ScreenMenu
           onStart={ handle_start_clicked }
-          onEnd = { handle_end_clicked }
         />
       }
       {/* Round */}
       {game_state == GameState.ROUND &&
         <ScreenRound
-          onAnswer = { handle_answer_clicked }
+          question = {current_question}
+          index = {qIndex}
+          total = {all_questions_length}
+          round_state = {round_state}
+          selected_answer_id = {selected_answer_id}
+          onAnswer = {handle_answer_clicked}
+          onNext = {handle_next}
+          onBack = {() => set_game_state(GameState.MENU)}
         />
       }
       {/* Result */}
       {game_state == GameState.RESULT &&
         <ScreenResult
-          onPlayAgain = { handle_play_again_clicked }
-          onBack = { handle_back_clicked }
+          score = {score_count}
+          total = {all_questions_length}
+          onPlayAgain={handle_start_clicked}
+          onBack={handle_end_clicked}
         />
       }
-      
     </main>
   )
-
-  /* ooooooooooooooooooooooooooooooold */
-  const [phase, setPhase] = useState<Phase>("loading");
-  const [globeReady, setGlobeReady] = useState(false);
-
-  // Quiz-State
-  const [qIndex, setQIndex] = useState(0);
-  const [selected, setSelected] = useState<number | null>(null);
-  const [state, setState] = useState<AnswerState>("idle");
-  const [correctCount, setCorrectCount] = useState(0);
-
-  const total = Questions.length;
-  const current: Question = Questions[qIndex];
-
-  const resetToIntro = useCallback(() => {
-    // Pins weg beim Zurück in den Startscreen
-    apiRef.current?.clearPin?.();
-
-    setPhase("intro");
-    setQIndex(0);
-    setSelected(null);
-    setState("idle");
-    setCorrectCount(0);
-  }, []);
-
-  const handleReady = useCallback((api: GlobeAPI) => {
-    apiRef.current = api;
-    setGlobeReady(true);
-    setTimeout(() => {
-      setPhase((p) => (p === "loading" ? "intro" : p));
-    }, 250);
-  }, []);
-
-  // Antworten bestätigen per Klick -> fliegen -> DANN Pin setzen
-  const handleAnswerClick = useCallback(
-    async (i: number) => {
-      if (state !== "idle") return;
-
-      setSelected(i);
-
-      const isCorrect = i === current.correctIndex;
-      if (isCorrect) setCorrectCount((c) => c + 1);
-
-      // UI-Status sofort umschalten (Fact anzeigen, Buttons sperren)
-      setState("confirmed");
-
-      // zur richtigen Lösung fliegen
-      await apiRef.current?.flyTo(
-        current.location.lat,
-        current.location.lng,
-        FLY_ALTITUDE,
-        FLY_MS
-      );
-
-      //let color = isCorrect ? "green" : "red";
-      // NACH dem Flug: Pin setzen
-      apiRef.current?.setPin?.({
-        lat: current.location.lat,
-        lng: current.location.lng,
-        label: current.question,
-        color: isCorrect ? "#00d492" : "#ff637e",
-      });
-    },
-    [current, state]
-  );
-
-  const onNext = useCallback(() => {
-    // Wenn letzte Frage: Ergebnis anzeigen + Pin löschen
-    if (qIndex + 1 >= total) {
-      apiRef.current?.clearPin?.();
-      setPhase("result");
-      return;
-    }
-    // Sonst nächste Frage
-    setQIndex((i) => i + 1);
-    setSelected(null);
-    setState("idle");
-  }, [qIndex, total]);
-
-  return (
-    <main className="relative h-[100dvh] w-full bg-black">
-      {/* 3D-Layer */}
-      <GlobeView onReady={handle_globe_ready} />
-
-      {/* Phase 1: Loader */}
-      {phase === "loading" && <Loader showIsReady={globeReady} />}
-
-      {/* Phase 2: Intro-Overlay */}
-      {phase === "intro" && (
-        <div className="pointer-events-none absolute inset-0 z-10">
-          <div className="pointer-events-auto absolute left-1/2 top-1/2 w-[min(520px,92vw)] -translate-x-1/2 -translate-y-1/2 rounded-2xl bg-[var(--col-light)] p-6 text-center shadow-xl">
-            <h1 className="mb-2 text-2xl font-semibold text-slate-900">Willkommen bei TERN 🌍</h1>
-            <p className="mb-5 text-slate-700">
-              Teste dein Weltwissen auf der 3D-Globe. Klicke auf „Spiel starten“, um loszulegen.
-            </p>
-            <button
-              className="rounded-xl bg-[var(--col-secondary)] px-5 py-2 font-medium text-white"
-              onClick={() => {
-                setPhase("game");
-                setQIndex(0);
-                setSelected(null);
-                setState("idle");
-                setCorrectCount(0);
-                apiRef.current?.clearPin?.(); // sicherstellen, dass keine alten Pins da sind
-              }}
-            >
-              Spiel starten
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Phase 3: Game-HUD */}
-      {phase === "game" && (
-        <div className="pointer-events-none absolute inset-0 z-10">
-          {/* Frage oben */}
-          <div className="pointer-events-auto mx-auto mt-4 w-[min(900px,95vw)] rounded-2xl bg-white/90 p-5 shadow-lg">
-            <div className="mb-1 text-xs uppercase tracking-wide text-slate-500">
-              Frage {qIndex + 1} / {total}
-            </div>
-            <h2 className="text-lg font-semibold text-slate-900">{current.question}</h2>
-          </div>
-
-          {/* Antworten & Controls unten */}
-          <div className="pointer-events-auto absolute inset-x-0 bottom-4 mx-auto grid w-[min(900px,95vw)] gap-2">
-            {current.answers.map((opt, i) => {
-              const isSel = selected === i;
-              const isCorrectNow = state === "confirmed" && i === current.correctIndex;
-              const isWrongNow = state === "confirmed" && isSel && i !== current.correctIndex;
-
-              let base =
-                "rounded-xl border-[10px] px-4 py-3 text-left text-slate-900 bg-[var(--col-light)] shadow transition-colors";
-
-              const border =
-                state === "idle"
-                  ? (isSel ? "border-[var(--col-secondary)]" : "border-[var(--col-light)]")
-                  : isCorrectNow
-                    ? "border-[var(--col-correct)] bg-emerald-50"
-                    : isWrongNow
-                      ? "border-rose-400 bg-rose-50"
-                      : "border-[var(--col-light)]";
-
-              const classes = `${base} ${border}`;
-
-
-              return (
-                <button
-                  key={`${opt}-${i}`}
-                  className={classes}
-                  disabled={state !== "idle"}         // nach Klick gesperrt
-                  onClick={() => handleAnswerClick(i)} // SOFORT bestätigen
-                >
-                  {opt}
-                </button>
-              );
-            })}
-
-            <div className="mt-2 flex gap-2">
-              {state === "idle" ? (
-                <button
-                  className="rounded-xl border border-slate-400 px-4 py-2 font-medium text-slate-900"
-                  onClick={resetToIntro}
-                >
-                  Zurück
-                </button>
-              ) : (
-                <>
-                  <button
-                    className="rounded-xl bg-emerald-500 px-4 py-2 font-medium text-white"
-                    onClick={onNext}
-                  >
-                    Weiter
-                  </button>
-                  <button
-                    className="rounded-xl border border-slate-400 px-4 py-2 font-medium text-slate-900"
-                    onClick={resetToIntro}
-                  >
-                    Startscreen
-                  </button>
-                </>
-              )}
-            </div>
-
-            {/* Fact-Box: erscheint nach Bestätigen */}
-            {state === "confirmed" && current.fact && (
-              <div className="mt-2 rounded-lg bg-white/90 p-3 text-sm text-slate-700 border border-slate-200">
-                {current.fact}
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* Phase 4: Result-Screen */}
-      {phase === "result" && (
-        <div className="pointer-events-none absolute inset-0 z-10">
-          <div className="pointer-events-auto absolute left-1/2 top-1/2 w-[min(520px,92vw)] -translate-x-1/2 -translate-y-1/2 rounded-2xl bg-white/90 p-6 text-center shadow-xl">
-            <h2 className="mb-2 text-2xl font-semibold text-slate-900">Ergebnis</h2>
-            <p className="mb-1 text-slate-800">
-              Du hast <span className="font-semibold">{correctCount}</span> von{" "}
-              <span className="font-semibold">{total}</span> Fragen richtig beantwortet.
-            </p>
-            <p className="mb-5 text-slate-600">({Math.round((correctCount / Math.max(1, total)) * 100)}%)</p>
-            <button className="rounded-xl bg-cyan-500 px-5 py-2 font-medium text-white" onClick={resetToIntro}>
-              Nochmal spielen!
-            </button>
-          </div>
-        </div>
-      )}
-    </main>
-  );
 }

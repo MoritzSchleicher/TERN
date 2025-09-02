@@ -1,6 +1,14 @@
-export function Nugget() {
+type NuggetProps = {
+  onNuggetClicked: () => void;
+  text: string,
+  show: boolean
+};
+
+export function Nugget({onNuggetClicked, text, show = false}: NuggetProps) {
+  if (!show) return null;
+
   return (
-    <div className="
+    <div onClick={onNuggetClicked} className="
         absolute
         pointer-events-auto
         w-[13.44dvw]
@@ -8,6 +16,7 @@ export function Nugget() {
         aspect-[1/1]
         left-[66.56dvw]
         top-[66.27dvh]
+        cursor-pointer
 
         rounded-[var(--border-radius-main)]
         bg-[var(--col-light)]
@@ -26,7 +35,7 @@ export function Nugget() {
             font-main
             leading-tight
         ">
-            Info: Lorem ipsum dolor sit amet, consetetur sadipscing elitr, sed diam nonumy eirmod tempor invidunt ut labore et
+            Info: {text}
         </span>
     </div>
   );

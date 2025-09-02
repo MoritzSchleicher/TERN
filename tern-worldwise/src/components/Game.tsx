@@ -1,7 +1,7 @@
 "use client";
 import { useRef, useState } from "react"
 import GlobeView from "@/components/GlobeView"
-import { Questions } from "@/data/questions"
+import { QuestionPool } from "@/data/questions"
 
 type GlobeAPI = { flyTo: (lat: number, lng: number, altitude?: number, ms?: number) => void }
 
@@ -9,7 +9,7 @@ export default function Game() {
   const [idx, setIdx] = useState(0)
   const [selected, setSelected] = useState<number | null>(null)
   const [state, setState] = useState<"idle" | "correct" | "wrong">("idle")
-  const q = Questions[idx]
+  const q = QuestionPool[idx]
   const globeRef = useRef<GlobeAPI | null>(null)
 
   const confirm = () => {
@@ -23,7 +23,7 @@ export default function Game() {
   const next = () => {
     setSelected(null)
     setState("idle")
-    setIdx((i) => (i + 1) % Questions.length)
+    setIdx((i) => (i + 1) % QuestionPool.length)
   }
 
   return (
@@ -82,7 +82,7 @@ export default function Game() {
           </ul>
 
           <div style={{ marginTop: 12, display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <span style={{ fontSize: 12, opacity: 0.8 }}>Frage {idx + 1} / {Questions.length}</span>
+            <span style={{ fontSize: 12, opacity: 0.8 }}>Frage {idx + 1} / {QuestionPool.length}</span>
             {state === "idle" ? (
               <button
                 onClick={confirm}

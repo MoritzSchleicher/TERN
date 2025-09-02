@@ -2,6 +2,8 @@ export function Archive() {
   return (
     <div className="
         absolute
+        top-[2dvh]
+        left-[1.46dvw]
         pointer-events-auto
         w-[13.44dvw]
         h-[16.2dvh]

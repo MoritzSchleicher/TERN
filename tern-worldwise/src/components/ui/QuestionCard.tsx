@@ -1,7 +1,12 @@
 import { UIMainCard } from "./UIMainCard";
 
+type QuestionCardProps = {
+    indicator: string,
+    question_text: string,
+    category: string
+}
 
-export function QuestionCard() {
+export function QuestionCard({indicator, question_text, category}: QuestionCardProps) {
   return (
     <UIMainCard>
         <span className="
@@ -14,7 +19,7 @@ export function QuestionCard() {
             w-full
             pr-[10px]
         ">
-            1/10
+            {indicator}
         </span>
         <span className="
             text-center
@@ -24,7 +29,7 @@ export function QuestionCard() {
             pb-6
             font-main
         ">
-            Wie heißt die Hauptstadt von Deutschland?
+            {question_text}
         </span>
         <span className="
             absolute
@@ -36,7 +41,7 @@ export function QuestionCard() {
             w-full
             pb-[5px]
         ">
-            Geschichte
+            {category}
         </span>
     </UIMainCard>
   );

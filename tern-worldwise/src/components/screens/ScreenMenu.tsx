@@ -5,10 +5,9 @@ import { UIMainCard } from "../ui/UIMainCard";
 
 type ScreenMenuProps = {
   onStart: () => void;
-  onEnd: () => void;
 };
 
-export default function ScreenMenu({ onStart, onEnd }: ScreenMenuProps) {
+export default function ScreenMenu({ onStart }: ScreenMenuProps) {
   return (
     <UIOverlay>
       <UIMainCard>
