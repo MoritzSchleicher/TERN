@@ -1,19 +1,43 @@
 // components/ScreenMenu.tsx
-import React from "react";
+import React, { useEffect } from "react";
 import { UIOverlay } from "../ui/UIOverlay";
 import { UIMainCard } from "../ui/UIMainCard";
+import { GameState } from "@/types/main_game_types";
 
 type ScreenResultProps = {
   onPlayAgain: () => void;
   onBack: () => void;
   score: number,
-  total: number
+  total: number,
+  game_state: GameState,
+  controls: any
 };
 
-export default function ScreenResult({ onPlayAgain, onBack, score, total }: ScreenResultProps) {
+export default function ScreenResult({ onPlayAgain, onBack, score, total, game_state, controls }: ScreenResultProps) {
+  useEffect(() => {
+    if(game_state !== GameState.RESULT) return;
+
+    controls.set({
+      x: "0",
+      y: "0",
+      opacity: 0,
+      scale: 0,
+    });
+
+    // Intro-Animation
+    controls.start({
+      x: "0",
+      y: "0",
+      opacity: 1,
+      scale: 1,
+      transition: { duration: 0.2, ease: "easeIn" },
+    });
+  }, [game_state, controls]);
+
+  
   return (
     <UIOverlay>
-      <UIMainCard>
+      <UIMainCard controls={controls}>
         <div className="
           grid
           grid-rows-[auto_auto]

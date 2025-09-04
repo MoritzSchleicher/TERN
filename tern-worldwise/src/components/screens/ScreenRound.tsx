@@ -1,5 +1,5 @@
 // components/ScreenMenu.tsx
-import React, { useCallback, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { UIOverlay } from "../ui/UIOverlay";
 import { QuestionCard } from "../ui/QuestionCard";
 import { AnswerButton } from "../ui/AnswerButton";
@@ -21,6 +21,8 @@ type ScreenRoundProps = {
   onAnswer: (i: number) => void;
   onNext: () => void;
   onBack: () => void;
+  question_controls: any;
+  nugget_controls: any;
 };
 
 export enum AnswerState {
@@ -37,7 +39,36 @@ export default function ScreenRound({
   onAnswer,
   onNext,
   onBack,
+  question_controls: question_controls,
+  nugget_controls: nugget_controls
 }: ScreenRoundProps) {
+  useEffect(() => {
+    if(round_state !== RoundState.QUESTION) return;
+
+    nugget_controls.set({
+      x: "0",
+      y: "0",
+      opacity: 0,
+      scale: 0,
+    });
+
+    question_controls.set({
+      x: "0",
+      y: "0",
+      opacity: 0,
+      scale: 0,
+    });
+
+    // Intro-Animation
+    question_controls.start({
+      x: "0",
+      y: "0",
+      opacity: 1,
+      scale: 1,
+      transition: { duration: 0.2, ease: "easeIn" },
+    });
+  }, [round_state, question_controls]);
+
   return (
     <UIOverlay>
         <Archive />
@@ -46,6 +77,7 @@ export default function ScreenRound({
           question_text = {question.question}
           category = {question.category as string} 
           round_state={round_state}
+          controls={question_controls}
         />
         <BottomUI>
           <div className="
@@ -88,8 +120,9 @@ export default function ScreenRound({
         </BottomUI>
         <Nugget 
           onNuggetClicked={onNext}
-          show = {round_state === RoundState.NUGGET}
           text = {question.fact}
+          state={round_state}
+          controls = {nugget_controls}
         />
     </UIOverlay>
   );

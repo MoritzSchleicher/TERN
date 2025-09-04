@@ -1,14 +1,18 @@
+import { RoundState } from "@/types/main_game_types";
+import { motion } from "framer-motion";
+import { rotate } from "three/tsl";
+
 type NuggetProps = {
   onNuggetClicked: () => void;
   text: string,
-  show: boolean
+  state?: RoundState;
+  controls: any
 };
 
-export function Nugget({onNuggetClicked, text, show = false}: NuggetProps) {
-  if (!show) return null;
+export function Nugget({onNuggetClicked, text, state, controls}: NuggetProps) {
 
   return (
-    <div onClick={onNuggetClicked} className="
+    <motion.div onClick={onNuggetClicked} className="
         absolute
         pointer-events-auto
         w-[13.44dvw]
@@ -26,7 +30,10 @@ export function Nugget({onNuggetClicked, text, show = false}: NuggetProps) {
         grid
         
         shadow-[5px_5px_15px_2px_#00000040]
-    ">
+      "
+      animate={controls}
+      initial={{ x: "0", y: "0", opacity: 0, scale: 1, rotateY: -90 }}
+    >
         <span className="
             text-center
             text-[2.18dvh]
@@ -37,6 +44,6 @@ export function Nugget({onNuggetClicked, text, show = false}: NuggetProps) {
         ">
             Info: {text}
         </span>
-    </div>
+    </motion.div>
   );
 }

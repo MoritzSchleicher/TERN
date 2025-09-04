@@ -1,23 +1,15 @@
+import { motion } from "framer-motion";
 import { RoundState } from "@/types/main_game_types";
 
 type UIMainCardProps = {
   children: React.ReactNode;
-  state?: RoundState; // optional
+  state?: RoundState; 
+  controls: any;
 };
 
-export function UIMainCard({ children, state = RoundState.QUESTION }: UIMainCardProps) {
-  let target = { x: "0", y: "0", scale: 1, opacity: 1 };
-  switch (state) {
-    case RoundState.FLIGHT:
-    case RoundState.NUGGET:
-      target = { x: "calc(-50% - 16dvw)", y: "23dvh", scale: 1, opacity: 1 }
-      break;
-    default:
-      break;
-  }
-
+export function UIMainCard({ children, state, controls }: UIMainCardProps) {
   return (
-    <div
+    <motion.div
       data-state={state}
       className="
         absolute
@@ -43,12 +35,11 @@ export function UIMainCard({ children, state = RoundState.QUESTION }: UIMainCard
         duration-700
         ease-out
         motion-reduce:transition-none
-    "
-    style={{
-        transform: `translate(${target.x}, ${target.y}) scale(${target.scale})`,
-        opacity: target.opacity,
-    }}>
-        {children}
-    </div>
+      "
+      animate={controls}
+      initial={{ x: "0", y: "0", opacity: 0, scale: 0, rotate: 0 }}
+    >
+      {children}
+    </motion.div>
   );
 }

@@ -6,12 +6,12 @@ type QuestionCardProps = {
     question_text: string,
     category: string,
     round_state: RoundState
+    controls: any
 }
 
-export function QuestionCard({indicator, question_text, category, round_state}: QuestionCardProps) {
-    const position_changed = round_state === RoundState.FLIGHT || RoundState.NUGGET
+export function QuestionCard({indicator, question_text, category, round_state, controls}: QuestionCardProps) {
   return (
-    <UIMainCard state={round_state}>
+    <UIMainCard state={round_state} controls={controls}>
         <span className="
             absolute
             top-[10px]

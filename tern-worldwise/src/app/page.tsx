@@ -1,5 +1,7 @@
 "use client";
 
+import { useAnimationControls } from "framer-motion";
+
 import { useCallback, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import Loader from "@/components/Loader";
@@ -11,7 +13,6 @@ const GlobeView = dynamic(() => import("@/components/GlobeView"), { ssr: false }
 import { QuestionPool, type Question } from "../data/questions";
 import type { GlobeAPI } from "@/components/GlobeView";
 import { GameState, GlobeState, RoundState } from "@/types/main_game_types";
-import Game from "@/components/Game";
 import ScreenMenu from "@/components/screens/ScreenMenu";
 import ScreenRound from "@/components/screens/ScreenRound";
 import ScreenResult from "@/components/screens/ScreenResult";
@@ -46,11 +47,16 @@ export default function MainGame() {
   // *────────────────────────────────
   const [qIndex, setQIndex] = useState(0);
   const [selected_answer_id, setSelectedAnswer] = useState<number | null>(null);
-  const [round_state, set_round_state] = useState<RoundState>(RoundState.QUESTION);
+  const [round_state, set_round_state] = useState<RoundState>(RoundState.NONE);
   const [score_count, setScoreCount] = useState(0);
 
   const all_questions_length = QuestionPool.length;
   const current_question: Question = QuestionPool[qIndex];
+
+  /* animation */
+  const question_controls = useAnimationControls();
+  const nugget_controls = useAnimationControls();
+  const menu_controls = useAnimationControls();
 
   /*
     ╔═════════════════════════════════════════════════════════════════════════════╗
@@ -65,12 +71,21 @@ export default function MainGame() {
     set_game_state(GameState.MENU);
   }, []);
 
-  const handle_start_clicked = useCallback(() => {
+  const handle_start_clicked = useCallback(async () => {
+    // Menu Karte ausfaden
+    await menu_controls.start({
+      x: "0",
+      y: "0",
+      opacity: 0,
+      scale: 0,
+      rotate: 0,
+      transition: { duration: 0.2, ease: "easeOut" },
+    });
+
     set_game_state(GameState.ROUND);
     set_globe_state(GlobeState.AUTO_MOVING);
-
     setQIndex(0);
-    setSelectedAnswer(null);
+    setSelectedAnswer(null);    
     set_round_state(RoundState.QUESTION);
     set_globe_state(GlobeState.AUTO_MOVING);
     setScoreCount(0);
@@ -91,9 +106,19 @@ export default function MainGame() {
       const is_correct = answer_index === current_question.correctIndex;
       if (is_correct) setScoreCount((counter) => counter + 1);
 
+
       // UI-Status sofort umschalten (Fact anzeigen, Buttons sperren)
       set_round_state(RoundState.FLIGHT);
       set_globe_state(GlobeState.LOCKED);
+      
+      await question_controls.start({
+        x: "calc(-50% - 16dvw)",
+        y: "23dvh",
+        opacity: 1,
+        scale: 1,
+        rotate: 0,
+        transition: { duration: 0.2, ease: "easeOut" },
+      });
 
       // zur richtigen Lösung fliegen
       await apiRef.current?.flyTo(
@@ -113,25 +138,61 @@ export default function MainGame() {
       });
 
       set_round_state(RoundState.NUGGET);
+      await nugget_controls.start({
+        x: "0",
+        y: "0",
+        opacity: 1,
+        scale: 1,
+        rotateY: 0,
+        transition: { duration: 0.2, ease: "easeIn" },
+      });
     },
     [current_question, round_state]
   );
 
-  const handle_next = useCallback(() => {
+  const handle_next = useCallback(async () => {
+    // 1) Card „wegfaden“
+    await question_controls.start({
+      x: "calc(-50% - 16dvw)",
+      y: "23dvh",
+      opacity: 0,
+      scale: 0,
+      rotate: 0,
+      transition: { duration: 0.2, ease: "easeOut" },
+    });
+
+    /* question_controls.set({
+      x: "0",
+      y: "0",
+      opacity: 0,
+      scale: 0,
+      rotate: 0,
+    }); */
+
+    // 2) Nugget wegfahren
+    await nugget_controls.start({
+      x: "-65.1dvw",
+      y: "-64.27dvh",
+      opacity: 0,
+      scale: 1,
+      rotate: 0,
+      transition: { duration: 0.4, ease: "easeOut" },
+    });
+
+    // 3) Jetzt inhaltlich zur nächsten Frage wechseln (keine sichtbare Karte)
     if (qIndex + 1 >= all_questions_length) {
       apiRef.current?.clearPin?.();
       set_game_state(GameState.RESULT);
+      set_globe_state(GlobeState.AUTO_MOVING);
       return;
     }
-    setQIndex(i => i + 1);
-    setSelectedAnswer(null);
-    set_round_state(RoundState.QUESTION);
-    set_globe_state(GlobeState.AUTO_MOVING);
-  }, [qIndex, all_questions_length]);
 
-  const handle_play_again_clicked = useCallback(() => {
-    console.log("play again clicked");
-  }, []); 
+    setQIndex((i) => i + 1);
+    setSelectedAnswer(null);
+    set_round_state(RoundState.QUESTION); 
+    set_globe_state(GlobeState.AUTO_MOVING);
+    
+  }, [qIndex, all_questions_length]);
   /* -------------------------------------------------------------------------- */
 
   /*
@@ -157,6 +218,8 @@ export default function MainGame() {
       {game_state == GameState.MENU && 
         <ScreenMenu
           onStart={ handle_start_clicked }
+          game_state={game_state}
+          controls={menu_controls}
         />
       }
       {/* Round */}
@@ -170,6 +233,8 @@ export default function MainGame() {
           onAnswer = {handle_answer_clicked}
           onNext = {handle_next}
           onBack = {() => set_game_state(GameState.MENU)}
+          question_controls={question_controls}
+          nugget_controls={nugget_controls}
         />
       }
       {/* Result */}
@@ -179,6 +244,8 @@ export default function MainGame() {
           total = {all_questions_length}
           onPlayAgain={handle_start_clicked}
           onBack={handle_end_clicked}
+          game_state={game_state}
+          controls={question_controls}
         />
       }
     </main>

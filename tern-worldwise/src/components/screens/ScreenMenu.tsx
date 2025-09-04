@@ -1,16 +1,39 @@
 // components/ScreenMenu.tsx
-import React from "react";
+import React, { useEffect } from "react";
 import { UIOverlay } from "../ui/UIOverlay";
 import { UIMainCard } from "../ui/UIMainCard";
+import { GameState } from "@/types/main_game_types";
 
 type ScreenMenuProps = {
   onStart: () => void;
+  game_state: GameState;
+  controls: any
 };
 
-export default function ScreenMenu({ onStart }: ScreenMenuProps) {
+export default function ScreenMenu({ onStart, game_state, controls }: ScreenMenuProps) {
+  useEffect(() => {
+    if(game_state !== GameState.MENU) return;
+
+    controls.set({
+      x: "0",
+      y: "0",
+      opacity: 0,
+      scale: 0,
+    });
+
+    // Intro-Animation
+    controls.start({
+      x: "0",
+      y: "0",
+      opacity: 1,
+      scale: 1,
+      transition: { duration: 0.2, ease: "easeIn" },
+    });
+  }, [game_state, controls]);
+    
   return (
     <UIOverlay>
-      <UIMainCard>
+      <UIMainCard controls={controls}>
         <div className="
           grid
           grid-rows-[auto_auto]
