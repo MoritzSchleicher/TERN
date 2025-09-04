@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 
-export default function Loader({ showIsReady: show_is_ready }: { showIsReady: boolean }) {
+export default function Loader({ show_is_ready: show_is_ready }: { show_is_ready: boolean }) {
  // *────────────────────────────────
 // * LEARN: useState()
 // * progress: State-Wert, kann alles sein (Zahl, String, Objekt, Typ …)

@@ -35,34 +35,33 @@ import { TimeController } from "@/service/time_controller";
 // * }
 // *────────────────────────────────
 export default function MainGame() {
-  // Game-State
-  const [game_state, set_game_state] = useState<GameState>(GameState.LOADING);
-  const [globe_state, set_globe_state] = useState<GlobeState>(GlobeState.LOADING);
-
-  const apiRef = useRef<GlobeAPI | null>(null);
-
-  const timeCtrlRef = useRef<TimeController | null>(null);
-  if (!timeCtrlRef.current) {
-    // z.B. 15s pro Frage + optionales Timeout-Handling
-    timeCtrlRef.current = new TimeController(15000);
-  }
-  const time_controller = timeCtrlRef.current;
+  // Refs
+  const globeApiRef = useRef<GlobeAPI | null>(null);
+  const timeCtrlApiRef = useRef<TimeController | null>(null);
   
   // *────────────────────────────────
   // * LEARN: States in den Parent
   // * Daten als Props nach unten, Änderungen per Callbacks nach oben;
   // * “dumme” Kinder (z. B. ScreenRound) rendern nur, was der Parent vorgibt.
   // *────────────────────────────────
-  const [qIndex, setQIndex] = useState(0);
-  const [selected_answer_id, setSelectedAnswer] = useState<number | null>(null);
+  // Game-States
+  const [game_state, set_game_state] = useState<GameState>(GameState.LOADING);
+  const [globe_state, set_globe_state] = useState<GlobeState>(GlobeState.LOADING);
   const [round_state, set_round_state] = useState<RoundState>(RoundState.NONE);
-  const [score_count, setScoreCount] = useState(0);
-
+  // Questions
+  const [qIndex, setQIndex] = useState(0);
   const [questions, setQuestions] = useState<Question[]>(QuestionPool);
   const all_questions_length = questions.length;
   const current_question: Question = questions[qIndex];
-
-  /* animation controller */
+  // Score
+  const [selected_answer_id, setSelectedAnswer] = useState<number | null>(null);
+  const [score_count, setScoreCount] = useState(0);
+  // Time
+  if (!timeCtrlApiRef.current) {
+    timeCtrlApiRef.current = new TimeController(Constants.GAME.TIME_PER_ROUND_IN_MS);
+  }
+  const time_controller = timeCtrlApiRef.current;
+  // Animations
   const question_controls = useAnimationControls();
   const nugget_controls = useAnimationControls();
   const menu_controls = useAnimationControls();
@@ -75,7 +74,7 @@ export default function MainGame() {
     ╚═════════════════════════════════════════════════════════════════════════════╝
   */
   const handle_globe_ready = useCallback((api: GlobeAPI) => {
-    apiRef.current = api;
+    globeApiRef.current = api;
     set_globe_state(GlobeState.READY);
     set_game_state(GameState.MENU);
   }, []);
@@ -99,7 +98,7 @@ export default function MainGame() {
     set_game_state(GameState.ROUND);
     set_round_state(RoundState.QUESTION);
     set_globe_state(GlobeState.AUTO_MOVING);
-    apiRef.current?.clearPin?.();
+    globeApiRef.current?.clearPin?.();
   }, []); 
 
   const handle_end_clicked = useCallback(() => {
@@ -127,11 +126,11 @@ export default function MainGame() {
         opacity: 1,
         scale: 1,
         rotate: 0,
-        transition: { duration: 0.2, ease: "easeOut" },
+        transition: { duration: 0.2, ease: "easeIn" },
       });
 
       // zur richtigen Lösung fliegen
-      await apiRef.current?.flyTo(
+      await globeApiRef.current?.flyTo(
         current_question.location.lat,
         current_question.location.lng,
         Constants.GLOBE.FLY_ALTITUDE,
@@ -140,7 +139,7 @@ export default function MainGame() {
 
       // NACH dem Flug: Pin setzen
       const pin_color = is_correct ? getCssVar("--col-correct") : getCssVar("--col-wrong");
-      apiRef.current?.setPin?.({
+      globeApiRef.current?.setPin?.({
         lat: current_question.location.lat,
         lng: current_question.location.lng,
         label: current_question.question,
@@ -171,14 +170,6 @@ export default function MainGame() {
       transition: { duration: 0.2, ease: "easeOut" },
     });
 
-    /* question_controls.set({
-      x: "0",
-      y: "0",
-      opacity: 0,
-      scale: 0,
-      rotate: 0,
-    }); */
-
     // 2) Nugget wegfahren
     await nugget_controls.start({
       x: "-65.1dvw",
@@ -191,7 +182,7 @@ export default function MainGame() {
 
     // 3) Jetzt inhaltlich zur nächsten Frage wechseln (keine sichtbare Karte)
     if (qIndex + 1 >= all_questions_length) {
-      apiRef.current?.clearPin?.();
+      globeApiRef.current?.clearPin?.();
       set_game_state(GameState.RESULT);
       set_globe_state(GlobeState.AUTO_MOVING);
       return;
@@ -252,13 +243,23 @@ export default function MainGame() {
   }, [time_controller, handle_answer_clicked]);
   /* -------------------------------------------------------------------------- */
 
+  /*
+  ╔═════════════════════════════════════════════════════════════════════════════╗
+  ║                                                                             ║
+  ║                              RETURN                                         ║
+  ║                                                                             ║
+  ╚═════════════════════════════════════════════════════════════════════════════╝
+  */
   return (
     <main className="relative h-[100dvh] w-full bg-black">
       {/* 3D-Layer */}
       <GlobeView onReady={handle_globe_ready} globe_state={globe_state}/>
       {/* Progressbar */}
       {/* TODO: Loader braucht eine update={ } mit dem loading-state vom globe */}
-      {game_state == GameState.LOADING && <Loader showIsReady={globe_state == GlobeState.READY} />}
+      {game_state == GameState.LOADING &&
+        <Loader 
+          show_is_ready={globe_state == GlobeState.READY} 
+        />}
       {/* Menu */}
       {game_state == GameState.MENU && 
         <ScreenMenu

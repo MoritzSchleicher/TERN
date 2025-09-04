@@ -15,4 +15,8 @@ export const Constants = {
     LON_OFFSET_DEG: -90,
     FINAL_ZOOM: 0.5,
   },
+  GAME: {
+    MAX_ROUNDS: 10,
+    TIME_PER_ROUND_IN_MS: 30000
+  }
 };

@@ -139,6 +139,8 @@ export default function GlobeView({ pin, onReady, globe_state = GlobeState.READY
       (globe as any).setPointOfView?.(camera);
       camera.position.set(Constants.GLOBE.START_POS.x, Constants.GLOBE.START_POS.y, Constants.GLOBE.START_POS.z);
 
+      const globeReady = new Promise<void>(res => globe.onGlobeReady?.(() => res()));
+
       /* -------------------------------------------------------------------------- */
 
       /*
@@ -148,17 +150,17 @@ export default function GlobeView({ pin, onReady, globe_state = GlobeState.READY
       ║                                                                             ║
       ╚═════════════════════════════════════════════════════════════════════════════╝
       */
-      fetch("/data/countries.geo.json")
-        .then((r) => r.json())
-        .then((geo) => {
-          globe
-            .polygonsData(geo.features)
-            .polygonAltitude(() => 0.0005)
-            .polygonCapColor(() => "rgba(255,255,255,0.03)")
-            .polygonSideColor(() => "rgba(111,231,231,0.10)")
-            .polygonStrokeColor(() => "rgba(111,231,231,0.25)");
-        })
-        .catch(() => {});
+     const countriesReady = fetch("/data/countries.geo.json")
+      .then(r => r.json())
+      .then(geo => {
+        globe
+          .polygonsData(geo.features)
+          .polygonAltitude(() => 0.0005)
+          .polygonCapColor(() => "rgba(255,255,255,0.03)")
+          .polygonSideColor(() => "rgba(111,231,231,0.10)")
+          .polygonStrokeColor(() => "rgba(111,231,231,0.25)");
+      })
+      .catch(() => {});
 
       /* -------------------------------------------------------------------------- */
 
@@ -310,6 +312,7 @@ export default function GlobeView({ pin, onReady, globe_state = GlobeState.READY
       ║              API NACH AUßEN           ║
       ╚═══════════════════════════════════════╝
       */
+     await Promise.all([globeReady, countriesReady]);
       onReadyRef.current?.({ flyTo, setPin, clearPin });
 
       /*
