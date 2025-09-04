@@ -2,7 +2,7 @@
 
 import { useAnimationControls } from "framer-motion";
 
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
 import Loader from "@/components/Loader";
 
@@ -17,6 +17,7 @@ import ScreenMenu from "@/components/screens/ScreenMenu";
 import ScreenRound from "@/components/screens/ScreenRound";
 import ScreenResult from "@/components/screens/ScreenResult";
 import { Constants } from "@/constants/general_constants";
+import { TimeController } from "@/service/time_controller";
 
 // *────────────────────────────────
 // * LEARN: In React erbt man nicht von Components,
@@ -39,6 +40,13 @@ export default function MainGame() {
   const [globe_state, set_globe_state] = useState<GlobeState>(GlobeState.LOADING);
 
   const apiRef = useRef<GlobeAPI | null>(null);
+
+  const timeCtrlRef = useRef<TimeController | null>(null);
+  if (!timeCtrlRef.current) {
+    // z.B. 15s pro Frage + optionales Timeout-Handling
+    timeCtrlRef.current = new TimeController(15000);
+  }
+  const time_controller = timeCtrlRef.current;
   
   // *────────────────────────────────
   // * LEARN: States in den Parent
@@ -50,10 +58,11 @@ export default function MainGame() {
   const [round_state, set_round_state] = useState<RoundState>(RoundState.NONE);
   const [score_count, setScoreCount] = useState(0);
 
-  const all_questions_length = QuestionPool.length;
-  const current_question: Question = QuestionPool[qIndex];
+  const [questions, setQuestions] = useState<Question[]>(QuestionPool);
+  const all_questions_length = questions.length;
+  const current_question: Question = questions[qIndex];
 
-  /* animation */
+  /* animation controller */
   const question_controls = useAnimationControls();
   const nugget_controls = useAnimationControls();
   const menu_controls = useAnimationControls();
@@ -81,14 +90,15 @@ export default function MainGame() {
       rotate: 0,
       transition: { duration: 0.2, ease: "easeOut" },
     });
+    
+    setQuestions(shuffleArray(QuestionPool));
+    setQIndex(0);
+    setSelectedAnswer(null); 
+    setScoreCount(0);   
 
     set_game_state(GameState.ROUND);
-    set_globe_state(GlobeState.AUTO_MOVING);
-    setQIndex(0);
-    setSelectedAnswer(null);    
     set_round_state(RoundState.QUESTION);
     set_globe_state(GlobeState.AUTO_MOVING);
-    setScoreCount(0);
     apiRef.current?.clearPin?.();
   }, []); 
 
@@ -98,7 +108,7 @@ export default function MainGame() {
   }, []); 
 
   const handle_answer_clicked = useCallback(
-    async (answer_index: number) => {
+    async (answer_index: number | null) => {
       if (round_state !== RoundState.QUESTION) return;
 
       setSelectedAnswer(answer_index);
@@ -198,13 +208,48 @@ export default function MainGame() {
   /*
     ╔═════════════════════════════════════════════════════════════════════════════╗
     ║                                                                             ║
-    ║                               HANDLERS                                      ║
+    ║                               HELPERS                                       ║
     ║                                                                             ║
     ╚═════════════════════════════════════════════════════════════════════════════╝
   */
   function getCssVar(name: string, el: Element = document.documentElement) {
     return getComputedStyle(el).getPropertyValue(name).trim();
   }
+
+  function shuffleArray<T>(arr: T[]): T[] {
+    const a = arr.slice();
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  }
+  /* -------------------------------------------------------------------------- */
+
+  
+  /*
+  ╔═════════════════════════════════════════════════════════════════════════════╗
+  ║                                                                             ║
+  ║                               EFFECTS                                       ║
+  ║                                                                             ║
+  ╚═════════════════════════════════════════════════════════════════════════════╝
+  */
+  useEffect(() => {
+    if (game_state === GameState.ROUND && round_state === RoundState.QUESTION) {
+      time_controller.reset();
+      time_controller.start();
+    } 
+    else {
+      time_controller.stop();
+    }
+  }, [game_state, round_state, time_controller]);
+
+  useEffect(() => {
+    time_controller.setOnComplete(() => {
+      // „keine Antwort“ → null
+      handle_answer_clicked(null);
+    });
+  }, [time_controller, handle_answer_clicked]);
   /* -------------------------------------------------------------------------- */
 
   return (
@@ -235,6 +280,7 @@ export default function MainGame() {
           onBack = {() => set_game_state(GameState.MENU)}
           question_controls={question_controls}
           nugget_controls={nugget_controls}
+          time_controller={time_controller}
         />
       }
       {/* Result */}

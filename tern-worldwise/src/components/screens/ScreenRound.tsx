@@ -1,5 +1,5 @@
 // components/ScreenMenu.tsx
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { UIOverlay } from "../ui/UIOverlay";
 import { QuestionCard } from "../ui/QuestionCard";
 import { AnswerButton } from "../ui/AnswerButton";
@@ -10,6 +10,7 @@ import { RoundState } from "@/types/main_game_types";
 import { Question, QuestionPool } from "@/data/questions";
 import { GlobeAPI } from "../GlobeView";
 import { Constants } from "@/constants/general_constants";
+import { TimeController } from "@/service/time_controller";
 
 
 type ScreenRoundProps = {
@@ -23,6 +24,7 @@ type ScreenRoundProps = {
   onBack: () => void;
   question_controls: any;
   nugget_controls: any;
+  time_controller: TimeController
 };
 
 export enum AnswerState {
@@ -40,8 +42,21 @@ export default function ScreenRound({
   onNext,
   onBack,
   question_controls: question_controls,
-  nugget_controls: nugget_controls
+  nugget_controls: nugget_controls,
+  time_controller: time_controller
 }: ScreenRoundProps) {
+  // 1) Antworten einmal pro Frage shufflen
+  const shuffledAnswers = useMemo(() => {
+    // { text, originalIndex }
+    const arr = question.answers.map((text, i) => ({ text, originalIndex: i }));
+    // Fisher–Yates
+    for (let i = arr.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [arr[i], arr[j]] = [arr[j], arr[i]];
+    }
+    return arr;
+  }, [question]);
+  
   useEffect(() => {
     if(round_state !== RoundState.QUESTION) return;
 
@@ -79,7 +94,7 @@ export default function ScreenRound({
           round_state={round_state}
           controls={question_controls}
         />
-        <BottomUI>
+        <BottomUI controller={time_controller}>
           <div className="
             absolute
             bottom-[2.35dvh]
@@ -93,26 +108,25 @@ export default function ScreenRound({
             align-center
             justify-center
           ">
-            {question.answers.map((answer, index) => {
-              const isSelected = selected_answer_id === index;
-              const isCorrect = index === question.correctIndex;
+            {shuffledAnswers.map(({ text, originalIndex }, i) => {
+              const isSelected = selected_answer_id === originalIndex;          
+              const isCorrect  = originalIndex === question.correctIndex;       
 
               let is_correct: boolean | null = null;
               if (round_state !== RoundState.QUESTION) {
                 if (isCorrect) is_correct = true;
                 else if (isSelected) is_correct = false;
               }
+
               return (
-                <AnswerButton 
-                  key={`${answer}-${index}`}
-                  onAnswerClicked = {() => {
-                    onAnswer(index);
-                  }}
-                  text = {answer}
-                  label = {String.fromCharCode(65 + index)}
-                  disabled = {round_state !== RoundState.QUESTION}
-                  selected = {isSelected}
-                  result = {is_correct}
+                <AnswerButton
+                  key={`${text}-${originalIndex}`}
+                  onAnswerClicked={() => onAnswer(originalIndex)}               
+                  text={text}
+                  label={String.fromCharCode(65 + i)}                           
+                  disabled={round_state !== RoundState.QUESTION}
+                  selected={isSelected}
+                  result={is_correct}
                 />
               );
             })}

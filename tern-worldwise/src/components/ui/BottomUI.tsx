@@ -1,6 +1,12 @@
-import { Progressbar } from "./Progressbar";
+import { TimeController } from "@/service/time_controller";
+import { Timebar } from "./Timebar";
 
-export function BottomUI({ children }: { children: React.ReactNode }) {
+type BottomUIProps = {
+  children: React.ReactNode;
+  controller: TimeController;
+};
+
+export function BottomUI({ children, controller }: BottomUIProps) {
   return (
 
     <div className="
@@ -27,7 +33,7 @@ export function BottomUI({ children }: { children: React.ReactNode }) {
             bottom-0
             z-2
         ">
-            <Progressbar />    
+            <Timebar controller={controller}/>    
         </div>       
     </div>
   );
