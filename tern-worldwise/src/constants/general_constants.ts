@@ -21,5 +21,9 @@ export const Constants = {
   GAME: {
     MAX_ROUNDS: 10,
     TIME_PER_ROUND_IN_MS: 30000
+  },
+  TEXT: {
+    QUESTION_MAX_SIGNS: 20,
+    NUGGET_MAX_SIGNS: 20
   }
 };

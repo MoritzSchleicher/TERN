@@ -1,5 +1,6 @@
 import { RoundState } from "@/types/main_game_types";
 import { UIMainCard } from "./UIMainCard";
+import AutoFitText from "@/helpers/TextFitter";
 
 type QuestionCardProps = {
     indicator: string,
@@ -24,16 +25,20 @@ export function QuestionCard({indicator, question_text, category, round_state, c
         ">
             {indicator}
         </span>
-        <span className="
+        <AutoFitText
+            min={24}
+            max={38}
+            className="
+            grid place-items-center
             text-center
-            text-[38px]
             h-full
-            content-center
+            px-4
             pb-6
             font-main
-        ">
+            "
+        >
             {question_text}
-        </span>
+        </AutoFitText>
         <span className="
             absolute
             bottom-0

@@ -1,3 +1,4 @@
+import AutoFitText from "@/helpers/TextFitter";
 import { RoundState } from "@/types/main_game_types";
 import { motion } from "framer-motion";
 import { rotate } from "three/tsl";
@@ -34,16 +35,19 @@ export function Nugget({onNuggetClicked, text, state, controls}: NuggetProps) {
       animate={controls}
       initial={{ x: "0", y: "0", opacity: 0, scale: 1, rotateY: -90 }}
     >
-        <span className="
+      <AutoFitText
+          min={16}
+          max={20}
+          className="
             text-center
-            text-[2.18dvh]
             h-full
             content-center
             font-main
             leading-tight
-        ">
-            Info: {text}
-        </span>
+          "
+      >
+          {text}
+      </AutoFitText>
     </motion.div>
   );
 }

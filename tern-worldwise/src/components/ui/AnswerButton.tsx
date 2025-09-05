@@ -1,3 +1,5 @@
+import AutoFitText from "@/helpers/TextFitter";
+
 type AnswerButtonProps = {
   onAnswerClicked: () => void;
   text: string,
@@ -65,24 +67,30 @@ export function AnswerButton({ onAnswerClicked, text, label, disabled, selected 
             data-[result=false]:data-[selected=true]:after:bg-[var(--col-wrong))]
         "
     >
-        <span className="
-            text-left
-            grid
-            content-center
-            text-[2.7dvh]
-            z-1
-        ">
-            {label}:
-        </span>
-        <span className="
-            text-left
-            grid
-            content-center
-            text-[2.7dvh]
-            font-bold
-        ">
+        <AutoFitText
+            min={20}
+            max={25}
+            className="
+                text-left
+                grid
+                content-center
+                z-1
+            "
+        >
+            {label}
+        </AutoFitText>
+        <AutoFitText
+            min={20}
+            max={25}
+            className="
+                text-left
+                grid
+                content-center
+                font-bold
+            "
+        >
             {text}
-        </span>
+        </AutoFitText>
         
     </button>
   );
