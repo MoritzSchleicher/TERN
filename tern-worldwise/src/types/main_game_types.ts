@@ -17,5 +17,7 @@ export enum GlobeState {
     LOADING,
     READY,
     AUTO_MOVING,
+    NO_AUTO_MOVING,
+    LOCKED_AUTO_MOVING,
     LOCKED,
 }

@@ -73,10 +73,12 @@ export default function MainGame() {
     ║                                                                             ║
     ╚═════════════════════════════════════════════════════════════════════════════╝
   */
-  const handle_globe_ready = useCallback((api: GlobeAPI) => {
+  const handle_globe_ready = useCallback(async (api: GlobeAPI) => {
     globeApiRef.current = api;
-    set_globe_state(GlobeState.READY);
+    set_globe_state(GlobeState.LOCKED_AUTO_MOVING);
     set_game_state(GameState.MENU);
+
+    await api.toMenuPose(800);
   }, []);
 
   const handle_start_clicked = useCallback(async () => {
@@ -90,6 +92,9 @@ export default function MainGame() {
       transition: { duration: 0.2, ease: "easeOut" },
     });
     
+    // Bewegung (async) – wenn fertig, weiter:
+    await globeApiRef.current?.toStartPose(1000);
+    
     setQuestions(shuffleArray(QuestionPool));
     setQIndex(0);
     setSelectedAnswer(null); 
@@ -101,9 +106,12 @@ export default function MainGame() {
     globeApiRef.current?.clearPin?.();
   }, []); 
 
-  const handle_end_clicked = useCallback(() => {
+  const handle_end_clicked = useCallback(async () => {
     set_game_state(GameState.MENU);
     set_globe_state(GlobeState.READY);
+    globeApiRef.current?.clearPin?.();
+
+    await globeApiRef.current!.toMenuPose(800);
   }, []); 
 
   const handle_answer_clicked = useCallback(
@@ -118,7 +126,7 @@ export default function MainGame() {
 
       // UI-Status sofort umschalten (Fact anzeigen, Buttons sperren)
       set_round_state(RoundState.FLIGHT);
-      set_globe_state(GlobeState.LOCKED);
+      set_globe_state(GlobeState.NO_AUTO_MOVING);
       
       await question_controls.start({
         x: "calc(-50% - 16dvw)",
@@ -180,14 +188,18 @@ export default function MainGame() {
       transition: { duration: 0.4, ease: "easeOut" },
     });
 
-    // 3) Jetzt inhaltlich zur nächsten Frage wechseln (keine sichtbare Karte)
+    // 4) rauszoomen
+    await globeApiRef.current?.zoomOutToStart(800);
+
+    // 3) Wenn letzte Frage → Result
     if (qIndex + 1 >= all_questions_length) {
-      globeApiRef.current?.clearPin?.();
       set_game_state(GameState.RESULT);
       set_globe_state(GlobeState.AUTO_MOVING);
       return;
     }
+    
 
+    // 5) … dann neue Frage setzen
     setQIndex((i) => i + 1);
     setSelectedAnswer(null);
     set_round_state(RoundState.QUESTION); 
@@ -253,7 +265,7 @@ export default function MainGame() {
   return (
     <main className="relative h-[100dvh] w-full bg-black">
       {/* 3D-Layer */}
-      <GlobeView onReady={handle_globe_ready} globe_state={globe_state}/>
+      <GlobeView onReady={handle_globe_ready} globe_state={globe_state} game_state={game_state}/>
       {/* Progressbar */}
       {/* TODO: Loader braucht eine update={ } mit dem loading-state vom globe */}
       {game_state == GameState.LOADING &&

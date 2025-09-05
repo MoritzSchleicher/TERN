@@ -31,8 +31,6 @@ export function UIMainCard({ children, state, controls }: UIMainCardProps) {
         shadow-[5px_5px_15px_2px_#00000040]
         will-change-transform
         transform-gpu
-        transition-[transform,opacity, scale]
-        duration-700
         ease-out
         motion-reduce:transition-none
       "

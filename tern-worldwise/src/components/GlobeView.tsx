@@ -1,7 +1,7 @@
 "use client";
 
 import { Constants } from "@/constants/general_constants";
-import { GlobeState } from "@/types/main_game_types";
+import { GameState, GlobeState } from "@/types/main_game_types";
 import { useEffect, useRef } from "react";
 import { PerspectiveCamera, Vector3 } from "three";
 import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
@@ -13,12 +13,15 @@ export type GlobeAPI = {
   flyTo: (lat: number, lng: number, altitude?: number, ms?: number) => Promise<void>;
   setPin: (pin: Pin, opts?: { altitude?: number; radius?: number }) => void;
   clearPin: () => void;
+  toMenuPose: (ms?: number) => Promise<void>;
+  toStartPose: (ms?: number) => Promise<void>;
+  zoomOutToStart: (ms?: number) => Promise<void>;
 };
 
 export type Props = {
-  pin?: Pin; // optional weiterhin als Prop nutzbar
   onReady?: (api: GlobeAPI) => void;
-  globe_state: GlobeState
+  globe_state: GlobeState,
+  game_state: GameState
 };
 
 
@@ -50,7 +53,7 @@ let flags: Pin[] = [];
 // *   (z. B. DOM-Ref, Timer-ID, Three.js-Objekt)
 // * 
 // *────────────────────────────────
-export default function GlobeView({ pin, onReady, globe_state = GlobeState.READY }: Props) {
+export default function GlobeView({ onReady, globe_state, game_state }: Props) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const globeRef = useRef<any>(null); // three-globe Instanz#
 
@@ -101,18 +104,30 @@ export default function GlobeView({ pin, onReady, globe_state = GlobeState.READY
       el.appendChild(renderer.domElement);
 
       camera = new PerspectiveCamera(45, el.clientWidth / el.clientHeight, 0.1, 1000);
-      camera.position.set(0, 0, 250);
+      camera.position.set(Constants.GLOBE.START_POS.x, Constants.GLOBE.START_POS.y, Constants.GLOBE.START_POS.z);
       cameraRef.current = camera;
 
+      /*
+      ╔═════════════════════════════════════════════════════════════════════════════╗
+      ║                                                                             ║
+      ║                               CONTROLS                                      ║
+      ║                                                                             ║
+      ╚═════════════════════════════════════════════════════════════════════════════╝
+      */
       const controls = new OrbitControls(camera, renderer.domElement);
       controlsRef.current = controls;
       controls.enableDamping = true;
-      controls.dampingFactor = 0.05;
-      controls.minDistance = 200;
-      controls.maxDistance = 400;
+      controls.dampingFactor = 0.035;
+      controls.minDistance = Constants.GLOBE.MIN_DIST;
+      controls.maxDistance = Constants.GLOBE.MAX_DIST;
       controls.enablePan = false;
       controls.autoRotate = true;
       controls.autoRotateSpeed = Constants.GLOBE.ROTATION_SPEED;
+      controls.rotateSpeed = 0.35;
+      controls.zoomSpeed = 0.8;
+
+      controls.minPolarAngle = 0.15 * Math.PI;           // ganz oben erlaubt
+      controls.maxPolarAngle = 0.9 * Math.PI;
 
       scene.add(new AmbientLight(0xffffff, 0.5));
       const dirLight = new DirectionalLight(0xfff5ec, 0.7);
@@ -137,7 +152,6 @@ export default function GlobeView({ pin, onReady, globe_state = GlobeState.READY
       globeRef.current = globe;
       (globe as any).controls?.(controls);
       (globe as any).setPointOfView?.(camera);
-      camera.position.set(Constants.GLOBE.START_POS.x, Constants.GLOBE.START_POS.y, Constants.GLOBE.START_POS.z);
 
       const globeReady = new Promise<void>(res => globe.onGlobeReady?.(() => res()));
 
@@ -173,6 +187,13 @@ export default function GlobeView({ pin, onReady, globe_state = GlobeState.READY
       };
       window.addEventListener("resize", onResize);
 
+      /*
+      ╔═════════════════════════════════════════════════════════════════════════════╗
+      ║                                                                             ║
+      ║                               FlyTo                                         ║
+      ║                                                                             ║
+      ╚═════════════════════════════════════════════════════════════════════════════╝
+      */
       const easeInOutCubic = (t: number) =>
         t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
 
@@ -202,15 +223,145 @@ export default function GlobeView({ pin, onReady, globe_state = GlobeState.READY
         return v0.clone().multiplyScalar(Math.cos(theta)).add(v2.multiplyScalar(Math.sin(theta)));
       }
 
+      function tweenCamAndTarget(toPos: Vector3, toTarget: Vector3, ms = 900): Promise<void> {
+        if (activeTween) cancelAnimationFrame(activeTween);
+        resolveCurrentFlight?.();
 
-      /*
-      ╔═════════════════════════════════════════════════════════════════════════════╗
-      ║                                                                             ║
-      ║                               FlyTo                                         ║
-      ║                                                                             ║
-      ╚═════════════════════════════════════════════════════════════════════════════╝
-      */
-      function flyTo(lat: number, lng: number, altitude = 1.4, ms = 1200): Promise<void> {
+        const fromPos = camera.position.clone();
+        const fromTarget = controls.target.clone();
+        const t0 = performance.now();
+
+        return new Promise<void>((resolve) => {
+          resolveCurrentFlight = resolve;
+
+          const step = () => {
+            const t = Math.min(1, (performance.now() - t0) / ms);
+            const k = easeInOutCubic(t);
+
+            camera.position.copy(fromPos.clone().lerp(toPos, k));
+            controls.target.copy(fromTarget.clone().lerp(toTarget, k));
+            camera.lookAt(controls.target);
+            controls.update();
+
+            if (t < 1) {
+              activeTween = requestAnimationFrame(step);
+            } else {
+              activeTween = 0;
+              resolve();
+              resolveCurrentFlight = null;
+            }
+          };
+
+          activeTween = requestAnimationFrame(step);
+        });
+      }
+
+      // Menü-Pose: Zielpunkt (Target) leicht ÜBER dem Globus-Zentrum → halber Globus sichtbar
+      async function toMenuPose(ms = 900): Promise<void> {
+        const R = Constants.GLOBE.RADIUS;
+        const CENTER = Constants.GLOBE.CENTER; // Vector3(0,0,0) in deinen Constants
+        const target = new Vector3(CENTER.x, CENTER.y + R * 1, CENTER.z); // ~38% des Radius nach oben
+        // aktuellen Blickwinkel der Controls übernehmen
+        const theta = controls.getAzimuthalAngle();         // ← links/rechts beibehalten
+        const phiDesired = Math.PI * 0.40;                  // ~72°, „leicht von oben“
+        const phi = Math.min(Math.max(
+          phiDesired,
+          (controls as any).minPolarAngle ?? 0
+        ), (controls as any).maxPolarAngle ?? Math.PI);
+
+        const dist = altitudeToDistance(0.8);
+        const viewDir = new Vector3().setFromSphericalCoords(1, phi, theta);
+        const camPos = target.clone().add(viewDir.multiplyScalar(dist));
+
+        // (optional) kurz Auto-Rotate aus während der Fahrt:
+        const prevAuto = controls.autoRotate; controls.autoRotate = false;
+        await tweenCamAndTarget(camPos, target, ms);
+        controls.autoRotate = prevAuto;
+      }
+
+      // Start-Pose: zurück auf deine START_POS + Target wieder Zentrum
+      async function toStartPose(ms = 900): Promise<void> {
+        if (activeTween) cancelAnimationFrame(activeTween);
+        resolveCurrentFlight?.();
+
+        const CENTER = Constants.GLOBE.CENTER.clone();
+
+        // Start-Radius aus deiner START_POS
+        const startR = new Vector3(
+          Constants.GLOBE.START_POS.x,
+          Constants.GLOBE.START_POS.y,
+          Constants.GLOBE.START_POS.z
+        ).length();
+
+        // aktuelle Blickrichtung aus den Controls holen
+        const theta = controls.getAzimuthalAngle(); // links/rechts beibehalten
+        const phi   = controls.getPolarAngle();     // hoch/runter beibehalten
+
+        // (optional) gegen Control-Limits klemmen, damit nichts "snapt"
+        const phiMin = (controls as any).minPolarAngle ?? 0;
+        const phiMax = (controls as any).maxPolarAngle ?? Math.PI;
+        const phiClamped = Math.min(Math.max(phi, phiMin + 1e-3), phiMax - 1e-3);
+
+        // Ziel-Position: gleicher Winkel, nur Radius = Start-Radius
+        const camPos = new Vector3()
+          .setFromSphericalCoords(startR, phiClamped, theta)
+          .add(CENTER); // falls CENTER != (0,0,0)
+
+        const prevAuto = controls.autoRotate; 
+        controls.autoRotate = false;
+
+        await tweenCamAndTarget(camPos, CENTER, ms);
+
+        controls.autoRotate = prevAuto;
+      }
+
+      
+      function zoomToDistance(distTarget: number, ms = 800): Promise<void> {
+        if (activeTween) cancelAnimationFrame(activeTween);
+        resolveCurrentFlight?.();
+
+        const startPos = camera.position.clone();
+        const dir = startPos.clone().normalize();          // Blickrichtung beibehalten
+        const endPos = dir.multiplyScalar(distTarget);
+        const t0 = performance.now();
+
+        return new Promise<void>((resolve) => {
+          resolveCurrentFlight = resolve;
+
+          const step = () => {
+            const t = Math.min(1, (performance.now() - t0) / ms);
+            const k = easeInOutCubic(t);
+
+            camera.position.copy(startPos.clone().lerp(endPos, k));
+            controls.target.copy(Constants.GLOBE.CENTER);
+            camera.lookAt(Constants.GLOBE.CENTER);
+            controls.update();
+
+            if (t < 1) {
+              activeTween = requestAnimationFrame(step);
+            } else {
+              activeTween = 0;
+              resolve();
+              resolveCurrentFlight = null;
+            }
+          };
+
+          activeTween = requestAnimationFrame(step);
+        });
+      }
+
+      // Start-„Zoom“ aus deiner Startposition ableiten
+      function getStartDistance(): number {
+        const s = Constants.GLOBE.START_POS;
+        return new Vector3(s.x, s.y, s.z - 50).length();
+      }
+
+      function zoomOutToStart(ms = 900) {
+        return zoomToDistance(getStartDistance(), ms);
+      }
+
+
+      function flyTo(lat: number, lng: number, altitude = 1.2, ms = 1200): Promise<void> {
         // Zielrichtung + Startwerte
         const targetDir = latLngToVec3(lat, lng, 1).normalize();
         const startDist = camera.position.length();
@@ -267,23 +418,6 @@ export default function GlobeView({ pin, onReady, globe_state = GlobeState.READY
       ║                                                                             ║
       ╚═════════════════════════════════════════════════════════════════════════════╝
       */
-    // *────────────────────────────────
-    // * LEARN: Ein Custom Hook ist wie eine kleine "öffentliche API".
-    // * Er gibt State + Funktionen zurück, die jede Komponente nutzen kann,
-    // * statt eine Klasse mit public Methoden zu bauen.
-    //
-    // *   function useCounter(initial = 0) {
-    // *     const [count, setCount] = React.useState(initial);
-    // *     const inc = () => setCount(c => c + 1);
-    // *     return { count, inc }; // quasi public API
-    // *   }
-    //
-    // *   function Counter() {
-    // *     const { count, inc } = useCounter();
-    // *     return <button onClick={inc}>Count: {count}</button>;
-    // *   }
-    // * 
-    // *────────────────────────────────
       function setPin(pin: Pin, opts?: { altitude?: number; radius?: number }) {
         // dedupe nach Koordinate (nicht .includes, das vergleicht Objekt-Referenzen)
         const key = `${pin.lat.toFixed(6)},${pin.lng.toFixed(6)}`;
@@ -312,8 +446,25 @@ export default function GlobeView({ pin, onReady, globe_state = GlobeState.READY
       ║              API NACH AUßEN           ║
       ╚═══════════════════════════════════════╝
       */
-     await Promise.all([globeReady, countriesReady]);
-      onReadyRef.current?.({ flyTo, setPin, clearPin });
+      await Promise.all([globeReady, countriesReady]);
+      onReadyRef.current?.({ flyTo, setPin, clearPin, toMenuPose, toStartPose, zoomOutToStart });
+      // *────────────────────────────────
+      // * LEARN: Ein Custom Hook ist wie eine kleine "öffentliche API".
+      // * Er gibt State + Funktionen zurück, die jede Komponente nutzen kann,
+      // * statt eine Klasse mit public Methoden zu bauen.
+      //
+      // *   function useCounter(initial = 0) {
+      // *     const [count, setCount] = React.useState(initial);
+      // *     const inc = () => setCount(c => c + 1);
+      // *     return { count, inc }; // quasi public API
+      // *   }
+      //
+      // *   function Counter() {
+      // *     const { count, inc } = useCounter();
+      // *     return <button onClick={inc}>Count: {count}</button>;
+      // *   }
+      // * 
+      // *────────────────────────────────
 
       /*
       ╔═══════════════════════════════════════╗
@@ -369,49 +520,37 @@ export default function GlobeView({ pin, onReady, globe_state = GlobeState.READY
     switch (globe_state) {
       case GlobeState.LOCKED:
         controls.autoRotate = false;
-        // optional richtig „locken“:
-        // controls.enableRotate = false;
-        // controls.enableZoom = false;
-        // controls.enablePan = false;
+        controls.enableRotate = false;
+        controls.enableZoom = false;
+        break;
+      case GlobeState.LOCKED_AUTO_MOVING:
+        controls.autoRotate = true;
+        controls.enableRotate = false;
+        controls.enableZoom = false;
+        break;
+
+      case GlobeState.NO_AUTO_MOVING:
+        controls.autoRotate = false;
+        controls.enableRotate = true;
+        controls.enableZoom = true;
         break;
 
       case GlobeState.AUTO_MOVING:
-        // optional wieder freigeben:
-        // controls.enableRotate = true;
+        controls.enableRotate = true;
+        controls.enableZoom = true;
         controls.autoRotate = true;
         break;
 
       case GlobeState.READY:
-        camera.position.set(Constants.GLOBE.START_POS.x, Constants.GLOBE.START_POS.y, Constants.GLOBE.START_POS.z);
-        camera.lookAt(0, 0, 0);
+        controls.enableRotate = true;
+        controls.enableZoom = true;
+        controls.enablePan = true;
+
         break;
     }
 
     controls.update();
   }, [globe_state]);
-
-
-  // Optional: weiterhin Prop-Änderungen spiegeln
-  useEffect(() => {
-    const globe = globeRef.current;
-    if (!globe) return;
-
-    if (pin) {
-      const pts = [
-        {
-          lat: pin.lat,
-          lng: pin.lng,
-          label: pin.label,
-          color: pin.color ?? "#6FE7E7",
-        },
-      ];
-      globe.pointsData?.(pts);
-      globe.setPointOfView?.({ lat: pin.lat, lng: pin.lng, altitude: 1.4 }, 1000) ??
-        globe.pointOfView?.({ lat: pin.lat, lng: pin.lng, altitude: 1.4 }, 1000);
-    } else {
-      globe.pointsData?.([]);
-    }
-  }, [pin]);
 
   return <div ref={containerRef} style={{ position: "absolute", inset: 0 }} />;
 }

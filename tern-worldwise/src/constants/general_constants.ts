@@ -8,12 +8,15 @@ export const Constants = {
   GLOBE: {
     FLY_ALTITUDE: 1.4,
     FLY_MS: 1200,
-    ROTATION_SPEED: -0.25,
+    ROTATION_SPEED: -0.35,
     START_POS: new Vector3(0, 0, 300),
     RADIUS: 100,
     CENTER: new Vector3(0, 0, 0),
     LON_OFFSET_DEG: -90,
     FINAL_ZOOM: 0.5,
+    TRANSITION_MOVE_SPEED: 900,
+    MIN_DIST: 180,
+    MAX_DIST: 400
   },
   GAME: {
     MAX_ROUNDS: 10,
