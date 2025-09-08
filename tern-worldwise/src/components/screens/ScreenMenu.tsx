@@ -61,13 +61,14 @@ export default function ScreenMenu({ onStart, game_state, controls }: ScreenMenu
               <button
                   className="
                     w-full
-                    h-[5vh]
+                    h-[5dvh]
                     cursor-pointer
                     rounded-xl
                     bg-[var(--col-secondary)]
-                    px-5
-                    py-2
+                    px-[0.26dvw]
+                    py-[0.22dvh]
                     font-medium
+                    text-[1.74dvh]
                     text-white 
                     cursor-pointer
                     "

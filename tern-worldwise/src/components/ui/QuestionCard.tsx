@@ -17,7 +17,7 @@ export function QuestionCard({indicator, question_text, category, round_state, c
             absolute
             top-[10px]
             text-end
-            text-[20px]
+            text-[2.18dvh]
             font-second
             content-center
             w-full
@@ -26,14 +26,16 @@ export function QuestionCard({indicator, question_text, category, round_state, c
             {indicator}
         </span>
         <AutoFitText
-            min={24}
-            max={38}
+            min={2.66}
+            max={4.13}
             className="
+            relative
             grid place-items-center
             text-center
             h-full
-            px-4
-            pb-6
+            w-fill
+            px-[0.21dvw]
+            pb-[0.65dvh]
             font-main
             "
         >
@@ -43,11 +45,11 @@ export function QuestionCard({indicator, question_text, category, round_state, c
             absolute
             bottom-0
             text-center
-            text-[20px]
+            text-[2.18dvh]
             !font-second
             content-center
             w-full
-            pb-[5px]
+            pb-[0.54dvh]
         ">
             {category}
         </span>

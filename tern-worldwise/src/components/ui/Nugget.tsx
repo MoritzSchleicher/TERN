@@ -18,14 +18,13 @@ export function Nugget({onNuggetClicked, text, state, controls}: NuggetProps) {
         pointer-events-auto
         w-[13.44dvw]
         h-[16.2dvh]
-        aspect-[1/1]
         left-[66.56dvw]
         top-[66.27dvh]
         cursor-pointer
 
         rounded-[var(--border-radius-main)]
         bg-[var(--col-light)]
-        p-[12px]
+        p-[1.3dvh]
         text-center
         text-[var(--font-col-dark)]
         grid
@@ -36,11 +35,13 @@ export function Nugget({onNuggetClicked, text, state, controls}: NuggetProps) {
       initial={{ x: "0", y: "0", opacity: 0, scale: 1, rotateY: -90 }}
     >
       <AutoFitText
-          min={16}
-          max={20}
+          min={1.74}
+          max={2.18}
           className="
-            text-center
+            relative
+            grid place-items-center
             h-full
+            w-full
             content-center
             font-main
             leading-tight

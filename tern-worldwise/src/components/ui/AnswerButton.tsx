@@ -24,13 +24,13 @@ export function AnswerButton({ onAnswerClicked, text, label, disabled, selected 
             h-[5.33dvh]
             rounded-[var(--border-radius-main)]
             bg-[var(--col-light)]
-            py-[6px]
-            px-[12px]
+            py-[0.65dvh]
+            px-[0.65dvw]
             text-left
             text-[var(--font-col-dark)]
             flex
             flex-row
-            gap-2
+            gap-[0.1dvw]
             justify-start
             cursor-pointer
             shadow-[5px_5px_5px_5px_#00000040]
@@ -68,24 +68,14 @@ export function AnswerButton({ onAnswerClicked, text, label, disabled, selected 
         "
     >
         <AutoFitText
-            min={20}
-            max={25}
+            min={2.18}
+            max={2.72}
             className="
                 text-left
                 grid
                 content-center
                 z-1
-            "
-        >
-            {label}
-        </AutoFitText>
-        <AutoFitText
-            min={20}
-            max={25}
-            className="
-                text-left
-                grid
-                content-center
+                align-center
                 font-bold
             "
         >

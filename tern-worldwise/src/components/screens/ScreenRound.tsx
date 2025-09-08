@@ -82,7 +82,7 @@ export default function ScreenRound({
       scale: 1,
       transition: { duration: 0.2, ease: "easeIn" },
     });
-  }, [round_state, question_controls]);
+  }, [round_state, question_controls, nugget_controls]);
 
   return (
     <UIOverlay>

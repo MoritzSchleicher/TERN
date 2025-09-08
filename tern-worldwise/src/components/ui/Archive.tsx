@@ -7,11 +7,10 @@ export function Archive() {
         pointer-events-auto
         w-[13.44dvw]
         h-[16.2dvh]
-        aspect-[1/1]
 
         rounded-[var(--border-radius-main)]
         bg-[var(--col-light)]
-        p-6
+        p-[0.65dvh]
         text-center
         text-[var(--font-col-dark)]
         grid
@@ -22,8 +21,8 @@ export function Archive() {
         after:h-[100%]
         after:bg-[#FFFCF9E5]
         after:absolute
-        after:left-[10px]
-        after:top-[10px]
+        after:left-[1.1dvh]
+        after:top-[1.1dvh]
         after:z-[-1]
         after:rounded-[var(--border-radius-main)]
         after:shadow-[5px_5px_15px_2px_#00000040]
@@ -31,9 +30,11 @@ export function Archive() {
         <span className="
             text-center
             text-[2.18dvh]
+            grid place-items-center
             h-full
+            w-full
             content-center
-            pb-6
+            pb-[0.65dvh]
             font-main
         ">
             Fragenkatalog

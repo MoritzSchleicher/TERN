@@ -1,5 +1,6 @@
 "use client";
 
+
 import { useAnimationControls } from "framer-motion";
 
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -104,7 +105,7 @@ export default function MainGame() {
     set_round_state(RoundState.QUESTION);
     set_globe_state(GlobeState.AUTO_MOVING);
     globeApiRef.current?.clearPin?.();
-  }, []); 
+  }, [menu_controls]); 
 
   const handle_end_clicked = useCallback(async () => {
     set_game_state(GameState.MENU);
@@ -164,7 +165,7 @@ export default function MainGame() {
         transition: { duration: 0.2, ease: "easeIn" },
       });
     },
-    [current_question, round_state]
+    [current_question, round_state, nugget_controls, question_controls]
   );
 
   const handle_next = useCallback(async () => {
@@ -205,7 +206,7 @@ export default function MainGame() {
     set_round_state(RoundState.QUESTION); 
     set_globe_state(GlobeState.AUTO_MOVING);
     
-  }, [qIndex, all_questions_length]);
+  }, [qIndex, all_questions_length, nugget_controls, question_controls]);
   /* -------------------------------------------------------------------------- */
 
   /*
@@ -265,7 +266,7 @@ export default function MainGame() {
   return (
     <main className="relative h-[100dvh] w-full bg-black">
       {/* 3D-Layer */}
-      <GlobeView onReady={handle_globe_ready} globe_state={globe_state} game_state={game_state}/>
+      <GlobeView onReady={handle_globe_ready} globe_state={globe_state}/>
       {/* Progressbar */}
       {/* TODO: Loader braucht eine update={ } mit dem loading-state vom globe */}
       {game_state == GameState.LOADING &&

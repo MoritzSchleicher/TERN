@@ -21,7 +21,6 @@ export type GlobeAPI = {
 export type Props = {
   onReady?: (api: GlobeAPI) => void;
   globe_state: GlobeState,
-  game_state: GameState
 };
 
 
@@ -53,7 +52,7 @@ let flags: Pin[] = [];
 // *   (z. B. DOM-Ref, Timer-ID, Three.js-Objekt)
 // * 
 // *────────────────────────────────
-export default function GlobeView({ onReady, globe_state, game_state }: Props) {
+export default function GlobeView({ onReady, globe_state }: Props) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const globeRef = useRef<any>(null); // three-globe Instanz#
 

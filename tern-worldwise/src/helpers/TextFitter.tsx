@@ -3,88 +3,101 @@ import { useEffect, useLayoutEffect, useRef } from "react";
 
 type Props = {
   children: React.ReactNode;
-  min?: number; // px
-  max?: number; // px
+  min?: number; // in dvh
+  max?: number; // in dvh
   className?: string;
 };
 
-export default function AutoFitText({ children, min = 24, max = 38, className }: Props) {
+export default function AutoFitText({
+  children,
+  min = 3,   // z.B. 3dvh
+  max = 8,   // z.B. 8dvh
+  className,
+}: Props) {
   const wrapRef = useRef<HTMLDivElement>(null);
   const textRef = useRef<HTMLSpanElement>(null);
+
+  const dvhToPx = (val: number) =>
+    (window.innerHeight * val) / 100; // 1dvh = 1% der innerHeight
 
   const fit = () => {
     const wrap = wrapRef.current;
     const el = textRef.current;
     if (!wrap || !el) return;
 
-    el.style.lineHeight = "1.1";
+    /* el.style.lineHeight = "1.1"; */
     el.style.wordBreak = "break-word";
     el.style.hyphens = "auto";
 
-    let lo = min, hi = max, best = min;
+    let lo = dvhToPx(min);
+    let hi = dvhToPx(max);
+    let best = lo;
 
-    // 1) Binäre Suche im Bereich [min, max]
     while (lo <= hi) {
-        const mid = Math.floor((lo + hi) / 2);
-        el.style.fontSize = `${mid}px`;
-        // Reflow
-        // eslint-disable-next-line @typescript-eslint/no-unused-expressions
-        el.offsetHeight;
+      const mid = Math.floor((lo + hi) / 2);
+      el.style.fontSize = `${mid}px`;
+      // force reflow
+      // eslint-disable-next-line @typescript-eslint/no-unused-expressions
+      el.offsetHeight;
 
-        const fits =
+      const fits =
         el.scrollHeight <= wrap.clientHeight &&
-        el.scrollWidth  <= wrap.clientWidth;
+        el.scrollWidth <= wrap.clientWidth;
 
-        if (fits) { best = mid; lo = mid + 1; }
-        else { hi = mid - 1; }
+      if (fits) {
+        best = mid;
+        lo = mid + 1;
+      } else {
+        hi = mid - 1;
+      }
     }
 
     el.style.fontSize = `${best}px`;
 
-    // 2) Wenn selbst "best" NICHT passt → unter min schrumpfen (harte Untergrenze)
-    const ABS_MIN = 8; // setz' dir hier deine harte Untergrenze
+    // Fallback unter harte Grenze (ABS_MIN = 1dvh)
+    const absMinPx = dvhToPx(1);
     const stillOverflows =
-        el.scrollHeight > wrap.clientHeight || el.scrollWidth > wrap.clientWidth;
+      el.scrollHeight > wrap.clientHeight || el.scrollWidth > wrap.clientWidth;
 
     if (stillOverflows) {
-        // Skaliere proportional runter (breite/höhe), dann clamp auf ABS_MIN
-        const ratioW = wrap.clientWidth  / el.scrollWidth;
-        const ratioH = wrap.clientHeight / el.scrollHeight;
-        const factor = Math.max(0, Math.min(ratioW, ratioH)); // <= 1
+      const ratioW = wrap.clientWidth / el.scrollWidth;
+      const ratioH = wrap.clientHeight / el.scrollHeight;
+      const factor = Math.max(0, Math.min(ratioW, ratioH));
+      let target = Math.max(absMinPx, Math.floor(best * factor));
+      el.style.fontSize = `${target}px`;
 
-        const target = Math.max(ABS_MIN, Math.floor(best * factor));
+      // safety loop
+      // eslint-disable-next-line @typescript-eslint/no-unused-expressions
+      el.offsetHeight;
+      while (
+        target > absMinPx &&
+        (el.scrollHeight > wrap.clientHeight ||
+          el.scrollWidth > wrap.clientWidth)
+      ) {
+        target = Math.max(absMinPx, target - 1);
         el.style.fontSize = `${target}px`;
-
-        // Safety: falls immer noch zu groß, iterativ schrumpfen
-        // (selten nötig, aber robust)
         // eslint-disable-next-line @typescript-eslint/no-unused-expressions
         el.offsetHeight;
-        let s = target;
-        while (
-        s > ABS_MIN &&
-        (el.scrollHeight > wrap.clientHeight || el.scrollWidth > wrap.clientWidth)
-        ) {
-        s = Math.max(ABS_MIN, s - 1);
-        el.style.fontSize = `${s}px`;
-        // eslint-disable-next-line @typescript-eslint/no-unused-expressions
-        el.offsetHeight;
-        }
+      }
     }
-    };
+  };
 
+  useLayoutEffect(() => {
+    fit();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [children, min, max]);
 
-  // vor dem ersten Paint, damit kein „Flackern“
-  useLayoutEffect(() => { fit(); }, [children]);
-
-  // bei Resize neu anpassen
   useEffect(() => {
     if (!wrapRef.current) return;
     const ro = new ResizeObserver(() => fit());
     ro.observe(wrapRef.current);
-    return () => ro.disconnect();
+    window.addEventListener("resize", fit);
+    return () => {
+      ro.disconnect();
+      window.removeEventListener("resize", fit);
+    };
   }, []);
 
-  // wenn Webfonts laden, danach nochmal fitten
   useEffect(() => {
     (document as any)?.fonts?.ready?.then?.(() => fit());
   }, []);
