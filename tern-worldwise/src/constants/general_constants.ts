@@ -10,6 +10,7 @@ export const Constants = {
     FLY_MS: 1200,
     ROTATION_SPEED: -0.35,
     START_POS: new Vector3(0, 0, 300),
+    RESP_START_POS: new Vector3(0, 0, 450),
     RADIUS: 100,
     CENTER: new Vector3(0, 0, 0),
     LON_OFFSET_DEG: -90,

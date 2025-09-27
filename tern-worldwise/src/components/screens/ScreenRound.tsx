@@ -96,17 +96,17 @@ export default function ScreenRound({
         />
         <BottomUI controller={time_controller}>
           <div className="
-            absolute
-            bottom-[2.35dvh]
+            relative
             pointer-events-auto
-            left-1/2
-            -translate-x-1/2
-            w-[43.45dvw]
+            w-[100%]
+            h-[100%]
             flex
             flex-row
             gap-[1.61dvw]
             align-center
             justify-center
+            items-center
+            portrait:max-md:flex-col
           ">
             {shuffledAnswers.map(({ text, originalIndex }, i) => {
               const isSelected = selected_answer_id === originalIndex;          

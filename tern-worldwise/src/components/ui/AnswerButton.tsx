@@ -20,12 +20,13 @@ export function AnswerButton({ onAnswerClicked, text, label, disabled, selected 
         data-result={result} 
         className="
             pointer-events-auto
-            w-[13.44dvw]
+            w-[70.44dvw]
             h-[5.33dvh]
             rounded-[var(--border-radius-main)]
             bg-[var(--col-light)]
             py-[0.65dvh]
             px-[0.65dvw]
+            portrait:max-md:px-[2dvw]
             text-left
             text-[var(--font-col-dark)]
             flex

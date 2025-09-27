@@ -30,6 +30,13 @@ export function Nugget({onNuggetClicked, text, state, controls}: NuggetProps) {
         grid
         
         shadow-[5px_5px_15px_2px_#00000040]
+        
+        portrait:max-md:left-auto
+        portrait:max-md:justify-self-center
+        portrait:max-md:top-[21.45vh]
+        portrait:max-md:h-[38dvw]
+        portrait:max-md:w-max
+        portrait:max-md:aspect-[1/1]
       "
       animate={controls}
       initial={{ x: "0", y: "0", opacity: 0, scale: 1, rotateY: -90 }}

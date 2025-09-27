@@ -21,6 +21,8 @@ export function UIMainCard({ children, state, controls }: UIMainCardProps) {
         h-[38vh]
         aspect-[1/1]
 
+        portrait:max-md:data-[state=nugget]:invisible
+
         rounded-[var(--border-radius-main)]
         bg-[var(--col-light)]
         p-6

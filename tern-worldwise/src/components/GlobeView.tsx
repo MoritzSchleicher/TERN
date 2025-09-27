@@ -285,11 +285,24 @@ export default function GlobeView({ onReady, globe_state }: Props) {
 
         const CENTER = Constants.GLOBE.CENTER.clone();
 
+        const isPhonePortrait =
+        window.matchMedia("(hover: none) and (pointer: coarse) and (orientation: portrait) and (max-width: 767px)").matches;
+
+        let x = Constants.GLOBE.START_POS.x;
+        let y = Constants.GLOBE.START_POS.y;
+        let z = Constants.GLOBE.START_POS.z;
+
+        if(isPhonePortrait){
+          x = Constants.GLOBE.RESP_START_POS.x;
+          y = Constants.GLOBE.RESP_START_POS.y;
+          z = Constants.GLOBE.RESP_START_POS.z;
+        }
+
         // Start-Radius aus deiner START_POS
         const startR = new Vector3(
-          Constants.GLOBE.START_POS.x,
-          Constants.GLOBE.START_POS.y,
-          Constants.GLOBE.START_POS.z
+          x,
+          y,
+          z
         ).length();
 
         // aktuelle Blickrichtung aus den Controls holen
@@ -351,7 +364,12 @@ export default function GlobeView({ onReady, globe_state }: Props) {
 
       // Start-„Zoom“ aus deiner Startposition ableiten
       function getStartDistance(): number {
-        const s = Constants.GLOBE.START_POS;
+        const isPhonePortrait =
+        window.matchMedia("(hover: none) and (pointer: coarse) and (orientation: portrait) and (max-width: 767px)").matches;
+        let s = Constants.GLOBE.START_POS;
+        if(isPhonePortrait){
+          s = Constants.GLOBE.RESP_START_POS;
+        }
         return new Vector3(s.x, s.y, s.z - 50).length();
       }
 

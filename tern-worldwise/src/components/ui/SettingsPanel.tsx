@@ -13,6 +13,7 @@ export function SettingsPanel() {
         gap-[1.63dvh]
         content-center
         items-center
+        invisible
     ">
         <div className="
             h-[9.47dvh]

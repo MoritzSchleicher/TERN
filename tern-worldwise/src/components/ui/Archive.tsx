@@ -5,8 +5,9 @@ export function Archive() {
         top-[2dvh]
         left-[1.46dvw]
         pointer-events-auto
-        w-[13.44dvw]
+        w-[auto]
         h-[16.2dvh]
+        aspect-[1.47/1]
 
         rounded-[var(--border-radius-main)]
         bg-[var(--col-light)]
@@ -23,9 +24,13 @@ export function Archive() {
         after:absolute
         after:left-[1.1dvh]
         after:top-[1.1dvh]
+        after:portrait:max-md:left-[0.5dvh]
+        after:portrait:max-md:top-[0.5dvh]
         after:z-[-1]
         after:rounded-[var(--border-radius-main)]
         after:shadow-[5px_5px_15px_2px_#00000040]
+
+        portrait:max-md:h-[10.2dvh]
     ">
         <span className="
             text-center

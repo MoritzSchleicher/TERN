@@ -96,7 +96,8 @@ export default function MainGame() {
     // Bewegung (async) – wenn fertig, weiter:
     await globeApiRef.current?.toStartPose(1000);
     
-    setQuestions(shuffleArray(QuestionPool));
+    const TEN = 10;
+    setQuestions(shuffleArray(QuestionPool).slice(0, Constants.GAME.MAX_ROUNDS));
     setQIndex(0);
     setSelectedAnswer(null); 
     setScoreCount(0);   
@@ -128,15 +129,28 @@ export default function MainGame() {
       // UI-Status sofort umschalten (Fact anzeigen, Buttons sperren)
       set_round_state(RoundState.FLIGHT);
       set_globe_state(GlobeState.NO_AUTO_MOVING);
+      const isPhonePortrait =
+      window.matchMedia("(hover: none) and (pointer: coarse) and (orientation: portrait) and (max-width: 767px)").matches;
+
+      if(isPhonePortrait){
+        await question_controls.start({
+          opacity: 0,
+          scale: 1,
+          rotate: 0,
+          transition: { duration: 0.2, ease: "easeIn" },
+        });
+      }
+      else{
+        await question_controls.start({
+          x: "calc(-50% - 16dvw)",
+          y: "23dvh",
+          opacity: 1,
+          scale: 1,
+          rotate: 0,
+          transition: { duration: 0.2, ease: "easeIn" },
+        });
+      }
       
-      await question_controls.start({
-        x: "calc(-50% - 16dvw)",
-        y: "23dvh",
-        opacity: 1,
-        scale: 1,
-        rotate: 0,
-        transition: { duration: 0.2, ease: "easeIn" },
-      });
 
       // zur richtigen Lösung fliegen
       await globeApiRef.current?.flyTo(
