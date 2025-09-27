@@ -34,7 +34,6 @@ export function SettingsPanel() {
         </div>
         <div className="
             h-[5.44dvh]
-            w-max
             aspect-[1/1]
             rounded-[100px]
             grid

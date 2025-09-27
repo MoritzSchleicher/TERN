@@ -35,7 +35,7 @@ export function Nugget({onNuggetClicked, text, state, controls}: NuggetProps) {
         portrait:max-md:justify-self-center
         portrait:max-md:top-[21.45vh]
         portrait:max-md:h-[38dvw]
-        portrait:max-md:w-max
+        portrait:max-md:w-auto
         portrait:max-md:aspect-[1/1]
       "
       animate={controls}

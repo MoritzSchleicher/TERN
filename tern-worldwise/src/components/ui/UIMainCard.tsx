@@ -16,9 +16,9 @@ export function UIMainCard({ children, state, controls }: UIMainCardProps) {
         pointer-events-auto
         left-1/2
         -translate-x-1/2
-        top-[21.45vh]
-        w-max
-        h-[38vh]
+        top-[21.45dvh]
+        h-[38dvh]
+        w-auto
         aspect-[1/1]
 
         portrait:max-md:data-[state=nugget]:invisible

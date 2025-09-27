@@ -96,7 +96,6 @@ export default function MainGame() {
     // Bewegung (async) – wenn fertig, weiter:
     await globeApiRef.current?.toStartPose(1000);
     
-    const TEN = 10;
     setQuestions(shuffleArray(QuestionPool).slice(0, Constants.GAME.MAX_ROUNDS));
     setQIndex(0);
     setSelectedAnswer(null); 
