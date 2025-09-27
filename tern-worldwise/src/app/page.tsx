@@ -129,8 +129,10 @@ export default function MainGame() {
       // UI-Status sofort umschalten (Fact anzeigen, Buttons sperren)
       set_round_state(RoundState.FLIGHT);
       set_globe_state(GlobeState.NO_AUTO_MOVING);
-      const isPhonePortrait =
-      window.matchMedia("(hover: none) and (pointer: coarse) and (orientation: portrait) and (max-width: 767px)").matches;
+      const isPortrait = window.matchMedia("(orientation: portrait)").matches;
+      const isSmallScreen = window.matchMedia("(max-width: 767px)").matches;
+
+      const isPhonePortrait = isPortrait && isSmallScreen;
 
       if(isPhonePortrait){
         await question_controls.start({

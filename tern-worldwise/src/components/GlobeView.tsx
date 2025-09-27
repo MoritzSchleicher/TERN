@@ -285,8 +285,10 @@ export default function GlobeView({ onReady, globe_state }: Props) {
 
         const CENTER = Constants.GLOBE.CENTER.clone();
 
-        const isPhonePortrait =
-        window.matchMedia("(hover: none) and (pointer: coarse) and (orientation: portrait) and (max-width: 767px)").matches;
+        const isPortrait = window.matchMedia("(orientation: portrait)").matches;
+        const isSmallScreen = window.matchMedia("(max-width: 767px)").matches;
+
+        const isPhonePortrait = isPortrait && isSmallScreen;
 
         let x = Constants.GLOBE.START_POS.x;
         let y = Constants.GLOBE.START_POS.y;
@@ -364,8 +366,10 @@ export default function GlobeView({ onReady, globe_state }: Props) {
 
       // Start-„Zoom“ aus deiner Startposition ableiten
       function getStartDistance(): number {
-        const isPhonePortrait =
-        window.matchMedia("(hover: none) and (pointer: coarse) and (orientation: portrait) and (max-width: 767px)").matches;
+        const isPortrait = window.matchMedia("(orientation: portrait)").matches;
+        const isSmallScreen = window.matchMedia("(max-width: 767px)").matches;
+
+        const isPhonePortrait = isPortrait && isSmallScreen;
         let s = Constants.GLOBE.START_POS;
         if(isPhonePortrait){
           s = Constants.GLOBE.RESP_START_POS;
