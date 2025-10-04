@@ -10,10 +10,10 @@ export type Question = {
 }
 
 export enum Categories {
-  HISTORY = "Geschichte",
-  GEO = "Geografie",
-  CULTURE = "Kultur",
-  FLORA_FAUNA = "Flora & Fauna"
+  HISTORY = "history",
+  GEO = "geography",
+  CULTURE = "culture",
+  NATURE = "nature"
 }
 
 export const QuestionPool: Question[] = [
@@ -141,7 +141,7 @@ export const QuestionPool: Question[] = [
     correctIndex: 0,
     location: { lat: 78.0, lng: 16.0, country: "Norwegen (Svalbard)" },
     fact: "Männliche Eisbären erreichen über 600 kg; sie jagen vor allem auf Meereis.",
-    category: Categories.FLORA_FAUNA
+    category: Categories.NATURE
   },
   {
     id: "q15",
@@ -195,7 +195,7 @@ export const QuestionPool: Question[] = [
     correctIndex: 0,
     location: { lat: 38.7223, lng: -9.1393, country: "Portugal" },
     fact: "Kork stammt aus der Rinde der Korkeiche; Portugal ist weltweit führender Produzent.",
-    category: Categories.FLORA_FAUNA
+    category: Categories.NATURE
   },
   {
     id: "q21",
@@ -231,7 +231,7 @@ export const QuestionPool: Question[] = [
     correctIndex: 0,
     location: { lat: -2.0, lng: 34.0, country: "Tansania" },
     fact: "Geparde erreichen 100 km/h in rund 3 Sekunden – schneller als viele Sportwagen.",
-    category: Categories.FLORA_FAUNA
+    category: Categories.NATURE
   },
   {
     id: "q25",
@@ -276,7 +276,7 @@ export const QuestionPool: Question[] = [
     correctIndex: 0,
     location: { lat: -15.0, lng: -47.0, country: "Brasilien" },
     fact: "Papageien können menschliche Laute imitieren und sind sehr lernfähig.",
-    category: Categories.FLORA_FAUNA
+    category: Categories.NATURE
   },
   {
     id: "q30",
@@ -312,7 +312,7 @@ export const QuestionPool: Question[] = [
     correctIndex: 0,
     location: { lat: -29.0, lng: 24.0, country: "Südafrika" },
     fact: "Straußeneier wiegen bis 1,5 kg, die größten im Tierreich.",
-    category: Categories.FLORA_FAUNA
+    category: Categories.NATURE
   },
   {
     id: "q34",
@@ -366,7 +366,7 @@ export const QuestionPool: Question[] = [
     correctIndex: 0,
     location: { lat: 48.0, lng: 11.0, country: "Deutschland" },
     fact: "Fledermäuse sind die einzigen aktiv flugfähigen Säugetiere.",
-    category: Categories.FLORA_FAUNA
+    category: Categories.NATURE
   },
   {
     id: "q40",
@@ -402,7 +402,7 @@ export const QuestionPool: Question[] = [
     correctIndex: 0,
     location: { lat: -54.8, lng: -68.3, country: "Chile" },
     fact: "Blauwale erreichen über 30 m Länge und 180 Tonnen Gewicht.",
-    category: Categories.FLORA_FAUNA
+    category: Categories.NATURE
   },
   {
     id: "q44",
@@ -438,7 +438,7 @@ export const QuestionPool: Question[] = [
     correctIndex: 0,
     location: { lat: -25.0, lng: 133.0, country: "Australien" },
     fact: "Das Känguru ziert auch das Wappen Australiens.",
-    category: Categories.FLORA_FAUNA
+    category: Categories.NATURE
   },
   {
     id: "q48",
