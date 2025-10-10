@@ -1,5 +1,9 @@
 // This is your Prisma schema file
 
+// *────────────────────────────────
+// * LEARN: beschreibt Datenstruktur in der DB
+// *────────────────────────────────
+
 // ===== Defauls =====
 generator client {
   provider = "prisma-client-js"
@@ -29,6 +33,11 @@ enum ModerationStatus {
   pending
   rejected
 }
+
+// *────────────────────────────────
+// * LEARN: model beschreibt Tabelle in der DB
+// * user tabelle wird später über prisma.user aufgerufen (Singular, klein geschrieben)
+// *────────────────────────────────
 
 // ===== Models =====
 model Question {

@@ -2,6 +2,7 @@
 
 
 import { useAnimationControls } from "framer-motion";
+import * as question_api from "@/lib/api/questionsApi";
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
@@ -10,8 +11,6 @@ import Loader from "@/components/Loader";
 // Globe nur im Browser laden
 const GlobeView = dynamic(() => import("@/components/GlobeView"), { ssr: false });
 
-// Fragen
-import { QuestionPool, type Question } from "../data/questions";
 import type { GlobeAPI } from "@/components/GlobeView";
 import { GameState, GlobeState, RoundState } from "@/types/main_game_types";
 import ScreenMenu from "@/components/screens/ScreenMenu";
@@ -19,6 +18,7 @@ import ScreenRound from "@/components/screens/ScreenRound";
 import ScreenResult from "@/components/screens/ScreenResult";
 import { Constants } from "@/constants/general_constants";
 import { TimeController } from "@/service/time_controller";
+import { Question } from "@/types/question_types";
 
 // *────────────────────────────────
 // * LEARN: In React erbt man nicht von Components,
@@ -51,9 +51,11 @@ export default function MainGame() {
   const [round_state, set_round_state] = useState<RoundState>(RoundState.NONE);
   // Questions
   const [qIndex, setQIndex] = useState(0);
-  const [questions, setQuestions] = useState<Question[]>(QuestionPool);
+  const [questions, setQuestions] = useState<Question[]>([]);
   const all_questions_length = questions.length;
   const current_question: Question = questions[qIndex];
+  const [loadingQuestions, setLoadingQuestions] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
   // Score
   const [selected_answer_id, setSelectedAnswer] = useState<number | null>(null);
   const [score_count, setScoreCount] = useState(0);
@@ -70,19 +72,14 @@ export default function MainGame() {
   /*
     ╔═════════════════════════════════════════════════════════════════════════════╗
     ║                                                                             ║
-    ║                               TEST                                          ║
+    ║                               Questions                                     ║
     ║                                                                             ║
     ╚═════════════════════════════════════════════════════════════════════════════╝
   */
-  useEffect(() => {
-    async function loadUserCount() {
-      const res = await fetch("/api/questions");
-      const data = await res.json();
-      console.log(data);
-    }
 
-    loadUserCount();
-  } , []);
+  useEffect(() => {
+    question_api.getAllQuestions().then(({ data }) => console.log(data));
+  }, []);
 
 
   /*
@@ -113,17 +110,31 @@ export default function MainGame() {
     
     // Bewegung (async) – wenn fertig, weiter:
     await globeApiRef.current?.toStartPose(1000);
-    
-    setQuestions(shuffleArray(QuestionPool).slice(0, Constants.GAME.MAX_ROUNDS));
-    setQIndex(0);
-    setSelectedAnswer(null); 
-    setScoreCount(0);   
 
-    set_game_state(GameState.ROUND);
-    set_round_state(RoundState.QUESTION);
-    set_globe_state(GlobeState.AUTO_MOVING);
-    globeApiRef.current?.clearPin?.();
-  }, [menu_controls]); 
+    // Fragen vom Server holen
+    setLoadingQuestions(true);
+    setLoadError(null);
+    try {
+      const { data } = await question_api.getRandom({ limit: 10 });
+      setQuestions(data);
+      setQIndex(0);
+      setSelectedAnswer(null);
+      setScoreCount(0);
+
+      set_game_state(GameState.ROUND);
+      set_round_state(RoundState.QUESTION);
+      set_globe_state(GlobeState.AUTO_MOVING);
+      globeApiRef.current?.clearPin?.();
+    } catch (e: any) {
+      console.error(e);
+      setLoadError("Konnte Fragen nicht laden.");
+      // zurück ins Menü
+      set_game_state(GameState.MENU);
+      set_globe_state(GlobeState.READY);
+    } finally {
+      setLoadingQuestions(false);
+    }
+  }, [menu_controls]);
 
   const handle_end_clicked = useCallback(async () => {
     set_game_state(GameState.MENU);
@@ -136,6 +147,7 @@ export default function MainGame() {
   const handle_answer_clicked = useCallback(
     async (answer_index: number | null) => {
       if (round_state !== RoundState.QUESTION) return;
+      if (!current_question) return;
 
       setSelectedAnswer(answer_index);
 
@@ -315,7 +327,7 @@ export default function MainGame() {
         />
       }
       {/* Round */}
-      {game_state == GameState.ROUND &&
+      {game_state == GameState.ROUND && current_question &&
         <ScreenRound
           question = {current_question}
           index = {qIndex}

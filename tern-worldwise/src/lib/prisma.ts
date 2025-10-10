@@ -1,5 +1,9 @@
 import { PrismaClient } from "@prisma/client";
 
+// *────────────────────────────────
+// * LEARN: Prisma ist das ORM (Object Relational Mapper)
+// * „Programmierschnittstelle“ zur Datenbank PostgreSQL
+// *────────────────────────────────
 
 //Speichern im globalen Node-Scope
 const globalForPrisma = global as unknown as { prisma: PrismaClient };

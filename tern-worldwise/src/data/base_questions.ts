@@ -1,22 +1,6 @@
-// src/data/questions.ts
-export type Question = {
-  id: string
-  question: string
-  answers: string[]
-  correctIndex: number
-  location: { lat: number; lng: number; country: string }
-  fact: string,
-  category: Categories
-}
+import { Categories, Question } from "@/types/question_types";
 
-export enum Categories {
-  HISTORY = "history",
-  GEO = "geography",
-  CULTURE = "culture",
-  NATURE = "nature"
-}
-
-export const QuestionPool: Question[] = [
+export const BaseQuestionPool: Question[] = [
   {
     id: "q1",
     question: "Wo entstand die erste bekannte Demokratie?",
