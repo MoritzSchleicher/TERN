@@ -144,7 +144,7 @@ export default function MainGame() {
     globeApiRef.current?.clearPin?.();
 
     await globeApiRef.current!.toMenuPose(800);
-  }, []); 
+  }, [result_controls]); 
 
   const handle_answer_clicked = useCallback(
     async (answer_index: number | null) => {
