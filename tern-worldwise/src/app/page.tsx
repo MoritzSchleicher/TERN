@@ -138,7 +138,7 @@ export default function MainGame() {
 
   const handle_end_clicked = useCallback(async () => {
     set_game_state(GameState.MENU);
-    set_globe_state(GlobeState.READY);
+    set_globe_state(GlobeState.LOCKED_AUTO_MOVING);
     globeApiRef.current?.clearPin?.();
 
     await globeApiRef.current!.toMenuPose(800);
