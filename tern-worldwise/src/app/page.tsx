@@ -69,6 +69,7 @@ export default function MainGame() {
   const question_controls = useAnimationControls();
   const nugget_controls = useAnimationControls();
   const menu_controls = useAnimationControls();
+  const result_controls = useAnimationControls();
 
   /*
     ╔═════════════════════════════════════════════════════════════════════════════╗
@@ -87,8 +88,11 @@ export default function MainGame() {
 
   const handle_start_clicked = useCallback(async () => {
     if (loadingQuestions) return;
+
+    const activeControls =
+    game_state === GameState.RESULT ? result_controls : menu_controls;
     // Menu Karte ausfaden
-    await menu_controls.start({
+    await activeControls.start({
       x: "0",
       y: "0",
       opacity: 0,
@@ -123,9 +127,18 @@ export default function MainGame() {
     } finally {
       setLoadingQuestions(false);
     }
-  }, [menu_controls, loadingQuestions]);
+  }, [game_state, menu_controls, result_controls, loadingQuestions]);
 
   const handle_end_clicked = useCallback(async () => {
+    await result_controls.start({
+      x: "0",
+      y: "0",
+      opacity: 0,
+      scale: 0,
+      rotate: 0,
+      transition: { duration: 0.2, ease: "easeOut" },
+    });
+
     set_game_state(GameState.MENU);
     set_globe_state(GlobeState.LOCKED_AUTO_MOVING);
     globeApiRef.current?.clearPin?.();
@@ -341,7 +354,7 @@ export default function MainGame() {
           onPlayAgain={handle_start_clicked}
           onBack={handle_end_clicked}
           game_state={game_state}
-          controls={menu_controls}
+          controls={result_controls}
         />
       }
     </main>
