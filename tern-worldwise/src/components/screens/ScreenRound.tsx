@@ -7,10 +7,10 @@ import { BottomUI } from "../ui/BottomUI";
 import { Archive } from "../ui/Archive";
 import { Nugget } from "../ui/Nugget";
 import { RoundState } from "@/types/main_game_types";
-import { Question, BaseQuestionPool } from "@/data/base_questions";
 import { GlobeAPI } from "../GlobeView";
 import { Constants } from "@/constants/general_constants";
 import { TimeController } from "@/service/time_controller";
+import { Question } from "@/types/question_types";
 
 
 type ScreenRoundProps = {
@@ -90,7 +90,7 @@ export default function ScreenRound({
         <QuestionCard
           indicator = {`${index+1}/${total}`}
           question_text = {question.question}
-          category = {question.category as string} 
+          category = {question.category} 
           round_state={round_state}
           controls={question_controls}
         />

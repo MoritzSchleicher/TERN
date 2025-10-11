@@ -46,7 +46,7 @@ export default function ScreenMenu({ onStart, game_state, controls }: ScreenMenu
                 Willkommen bei TERN
             </h1>
             <h2>
-                Teste dein Weltwissen auf der 3D-Globe. Klicke auf „Spiel starten“, um loszulegen.
+                Teste dein Weltwissen auf dem interaktiven 3D-Globus! Beantworte 10 Fragen in jeweils 30 Sekunden – nach jeder Frage zeigt der Globus die richtige Position. Klicke auf „Spiel starten“, um loszulegen.
             </h2>
           </div>
           <div className="

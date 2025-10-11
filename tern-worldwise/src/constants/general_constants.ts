@@ -19,6 +19,9 @@ export const Constants = {
     MIN_DIST: 180,
     MAX_DIST: 400
   },
+  UI: {
+    NUGGET_REMINDER: 3000
+  },
   GAME: {
     MAX_ROUNDS: 10,
     TIME_PER_ROUND_IN_MS: 30000

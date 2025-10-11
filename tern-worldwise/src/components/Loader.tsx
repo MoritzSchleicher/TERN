@@ -69,7 +69,7 @@ export default function Loader({ show_is_ready: show_is_ready }: { show_is_ready
       <div className="w-[min(520px,90vw)]">
         {/* Obere Beschriftung mit Prozentzahl */}
         <div className="mb-3 text-center text-sm font-medium text-[var(--col-light)]">
-          lädt assets … {clamped}%
+          Lädt Assets … {clamped}%
         </div>
 
         {/* Äußere Leiste (Hintergrund), leicht transparent */}
@@ -77,7 +77,7 @@ export default function Loader({ show_is_ready: show_is_ready }: { show_is_ready
           {/* Innere Leiste (Füllung). Breite wird dynamisch über Inline-Style gesetzt.
              transition-[width] sorgt für sanftes Nachziehen bei Prozent-Änderung. */}
           <div
-            className="h-full rounded-full bg-cyan-400 transition-[width] duration-150"
+            className="h-full rounded-full bg-[var(--col-light)] transition-[width] duration-150"
             style={{ width: `${clamped}%` }}
           />
         </div>

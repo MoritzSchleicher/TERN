@@ -1,5 +1,5 @@
 // components/ScreenMenu.tsx
-import React, { useEffect } from "react";
+import React, { useEffect, useMemo } from "react";
 import { UIOverlay } from "../ui/UIOverlay";
 import { UIMainCard } from "../ui/UIMainCard";
 import { GameState } from "@/types/main_game_types";
@@ -12,6 +12,19 @@ type ScreenResultProps = {
   game_state: GameState,
   controls: any
 };
+
+function getResultHeadline(score: number, total: number): string {
+  if (total <= 0) return "Geschafft!";
+  if (score === total) return "Perfekt!";
+  if (score === 0) return "Oh je!";
+  const ratio = score / total;
+
+  if (ratio >= 0.9) return "Großartig!";
+  if (ratio >= 0.7) return "Stark!";
+  if (ratio >= 0.5) return "Stabil!";
+  if (ratio >= 0.3) return "Das geht besser!";
+  return "Versuch es nochmal!";
+}
 
 export default function ScreenResult({ onPlayAgain, onBack, score, total, game_state, controls }: ScreenResultProps) {
   useEffect(() => {
@@ -34,6 +47,12 @@ export default function ScreenResult({ onPlayAgain, onBack, score, total, game_s
     });
   }, [game_state, controls]);
 
+
+  // *────────────────────────────────
+  // * LEARN: useMemo → merkt sich Werte.
+  // * useCallback → merkt sich Funktionen (eigentlich useMemo(fn, deps), nur bequemer).
+  // *────────────────────────────────
+  const headline = useMemo(() => getResultHeadline(score, total), [score, total]);
   
   return (
     <UIOverlay>
@@ -47,7 +66,7 @@ export default function ScreenResult({ onPlayAgain, onBack, score, total, game_s
         ">
           <div>
             <h1>
-                Wunderbar!
+                {headline}
             </h1>
             <h2>
                 {`Du hast ${score.toString()} von ${total.toString()} richtig!`}
@@ -106,25 +125,3 @@ export default function ScreenResult({ onPlayAgain, onBack, score, total, game_s
     </UIOverlay>
   );
 }
-
-/* <div className="pointer-events-none absolute inset-0 z-10">
-      <div className="pointer-events-auto absolute left-1/2 top-1/2 w-[min(520px,92vw)] -translate-x-1/2 -translate-y-1/2 rounded-2xl bg-[var(--col-light)] p-6 text-center shadow-xl">
-        <h1 className="mb-2 text-2xl font-semibold text-slate-900">Willkommen bei TERN 🌍</h1>
-        <p className="mb-5 text-slate-700">
-          Teste dein Weltwissen auf der 3D-Globe. Klicke auf „Spiel starten“, um loszulegen.
-        </p>
-        <button
-          className="rounded-xl bg-[var(--col-secondary)] px-5 py-2 font-medium text-white"
-          onClick={onStart}
-        >
-          Spiel starten
-        </button>
-
-        <button
-          className="rounded-xl bg-[var(--col-secondary)] px-5 py-2 font-medium text-white"
-          onClick={onEnd}
-        >
-          Spiel beenden
-        </button>
-      </div>
-    </div> */

@@ -1,17 +1,28 @@
 import { RoundState } from "@/types/main_game_types";
 import { UIMainCard } from "./UIMainCard";
 import AutoFitText from "@/helpers/TextFitter";
+import { Categories } from "@/types/question_types";
 
 type QuestionCardProps = {
     indicator: string,
     question_text: string,
-    category: string,
+    category: Categories,
     round_state: RoundState
     controls: any
 }
 
+const CATEGORY_LABELS_DE: Record<Categories, string> = {
+  [Categories.HISTORY]: "Geschichte",
+  [Categories.GEO]: "Geografie",
+  [Categories.CULTURE]: "Kultur",
+  [Categories.NATURE]: "Natur",
+};
+
 export function QuestionCard({indicator, question_text, category, round_state, controls}: QuestionCardProps) {
-  return (
+    // TODO: LocaKeys
+    const categoryLabel = CATEGORY_LABELS_DE[category] ?? String(category);
+
+    return (
     <UIMainCard state={round_state} controls={controls}>
         <span className="
             absolute
@@ -51,7 +62,7 @@ export function QuestionCard({indicator, question_text, category, round_state, c
             w-full
             pb-[0.54dvh]
         ">
-            {category}
+            {categoryLabel}
         </span>
     </UIMainCard>
   );

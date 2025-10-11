@@ -9,6 +9,8 @@ export function Archive() {
         h-[16.2dvh]
         aspect-[1.47/1]
 
+        invisible
+
         rounded-[var(--border-radius-main)]
         bg-[var(--col-light)]
         p-[0.65dvh]

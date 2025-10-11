@@ -19,6 +19,7 @@ import ScreenResult from "@/components/screens/ScreenResult";
 import { Constants } from "@/constants/general_constants";
 import { TimeController } from "@/service/time_controller";
 import { Question } from "@/types/question_types";
+import LoadingSpinner from "@/components/ui/LoadingSpinner";
 
 // *────────────────────────────────
 // * LEARN: In React erbt man nicht von Components,
@@ -72,19 +73,6 @@ export default function MainGame() {
   /*
     ╔═════════════════════════════════════════════════════════════════════════════╗
     ║                                                                             ║
-    ║                               Questions                                     ║
-    ║                                                                             ║
-    ╚═════════════════════════════════════════════════════════════════════════════╝
-  */
-
-  useEffect(() => {
-    question_api.getAllQuestions().then(({ data }) => console.log(data));
-  }, []);
-
-
-  /*
-    ╔═════════════════════════════════════════════════════════════════════════════╗
-    ║                                                                             ║
     ║                               HANDLERS                                      ║
     ║                                                                             ║
     ╚═════════════════════════════════════════════════════════════════════════════╝
@@ -98,6 +86,7 @@ export default function MainGame() {
   }, []);
 
   const handle_start_clicked = useCallback(async () => {
+    if (loadingQuestions) return;
     // Menu Karte ausfaden
     await menu_controls.start({
       x: "0",
@@ -134,7 +123,7 @@ export default function MainGame() {
     } finally {
       setLoadingQuestions(false);
     }
-  }, [menu_controls]);
+  }, [menu_controls, loadingQuestions]);
 
   const handle_end_clicked = useCallback(async () => {
     set_game_state(GameState.MENU);
@@ -312,6 +301,8 @@ export default function MainGame() {
     <main className="relative h-[100dvh] w-full bg-black">
       {/* 3D-Layer */}
       <GlobeView onReady={handle_globe_ready} globe_state={globe_state}/>
+      {/* Globaler Mini-Spinner während Fragen-Ladevorgang */}
+      {loadingQuestions && <LoadingSpinner />}
       {/* Progressbar */}
       {/* TODO: Loader braucht eine update={ } mit dem loading-state vom globe */}
       {game_state == GameState.LOADING &&
@@ -350,7 +341,7 @@ export default function MainGame() {
           onPlayAgain={handle_start_clicked}
           onBack={handle_end_clicked}
           game_state={game_state}
-          controls={question_controls}
+          controls={menu_controls}
         />
       }
     </main>
