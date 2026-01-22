@@ -22,8 +22,8 @@ type ScreenRoundProps = {
   onAnswer: (i: number) => void;
   onNext: () => void;
   onBack: () => void;
-  question_controls: any;
-  nugget_controls: any;
+  anim_question_controls: any;
+  anim_nugget_controls: any;
   time_controller: TimeController
 };
 
@@ -41,8 +41,8 @@ export default function ScreenRound({
   onAnswer,
   onNext,
   onBack,
-  question_controls: question_controls,
-  nugget_controls: nugget_controls,
+  anim_question_controls: anim_question_controls,
+  anim_nugget_controls: anim_nugget_controls,
   time_controller: time_controller
 }: ScreenRoundProps) {
   // 1) Antworten einmal pro Frage shufflen
@@ -60,14 +60,14 @@ export default function ScreenRound({
   useEffect(() => {
     if(round_state !== RoundState.QUESTION) return;
 
-    nugget_controls.set({
+    anim_nugget_controls.set({
       x: "0",
       y: "0",
       opacity: 0,
       scale: 0,
     });
 
-    question_controls.set({
+    anim_question_controls.set({
       x: "0",
       y: "0",
       opacity: 0,
@@ -75,14 +75,14 @@ export default function ScreenRound({
     });
 
     // Intro-Animation
-    question_controls.start({
+    anim_question_controls.start({
       x: "0",
       y: "0",
       opacity: 1,
       scale: 1,
       transition: { duration: 0.2, ease: "easeIn" },
     });
-  }, [round_state, question_controls, nugget_controls]);
+  }, [round_state, anim_question_controls, anim_nugget_controls]);
 
   return (
     <UIOverlay>
@@ -92,7 +92,7 @@ export default function ScreenRound({
           question_text = {question.question}
           category = {question.category} 
           round_state={round_state}
-          controls={question_controls}
+          controls={anim_question_controls}
         />
         <BottomUI controller={time_controller}>
           <div className="
@@ -136,7 +136,7 @@ export default function ScreenRound({
           onNuggetClicked={onNext}
           text = {question.fact}
           state={round_state}
-          controls = {nugget_controls}
+          controls = {anim_nugget_controls}
         />
     </UIOverlay>
   );

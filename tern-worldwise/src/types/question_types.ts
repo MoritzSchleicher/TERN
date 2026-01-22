@@ -1,4 +1,6 @@
-export type GetRandomParams = { limit?: number };
+export type GetRandomParams = { 
+  limit?: number 
+};
 
 export type Question = {
   id: string

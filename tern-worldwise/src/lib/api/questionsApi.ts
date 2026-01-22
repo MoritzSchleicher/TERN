@@ -24,13 +24,19 @@ export async function getQuestionById(id: string) {
   return res.json();
 }
 
-export async function getRandom(params: GetRandomParams = {}) {
+export async function get_random_questions(params: GetRandomParams = {}) {
   const url = new URL("/api/questions/random", window.location.origin);
-  if (params.limit) url.searchParams.set("limit", String(params.limit));
 
-  const res = await fetch(url.toString(), { method: "GET" });
-  if (!res.ok) throw new Error(`getRandom failed: ${res.status}`);
-  const data = await res.json();
+  if (params.limit !== undefined){
+    url.searchParams.set("limit", String(params.limit));
+  } 
+
+  const response = await fetch(url.toString(), { method: "GET" });
+  if (!response.ok){
+    throw new Error(`get random question failed: ${response.status}`);
+  } 
+
+  const data = await response.json();
   return { data }; 
 }
 
