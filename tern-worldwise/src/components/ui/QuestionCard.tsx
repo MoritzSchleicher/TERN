@@ -40,14 +40,14 @@ export function QuestionCard({indicator, question_text, category, round_state, c
             min={2.66}
             max={4.13}
             className="
-            relative
-            grid place-items-center
-            text-center
-            h-full
-            w-fill
-            px-[0.21dvw]
-            pb-[0.65dvh]
-            font-main
+                relative
+                grid place-items-center
+                text-center
+                h-full
+                w-fill
+                px-[0.21dvw]
+                pb-[0.65dvh]
+                font-main
             "
         >
             {question_text}

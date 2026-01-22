@@ -19,6 +19,8 @@ import { Constants } from "@/constants/general_constants";
 import { TimeController } from "@/service/time_controller";
 import { Question } from "@/types/question_types";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
+import { DebugPanel } from "@/components/DebugPanel";
+import { SubmitCard } from "@/components/ui/SubmitCard";
 
 // *────────────────────────────────
 // * LEARN: In React erbt man nicht von Components,
@@ -257,6 +259,11 @@ export default function main() {
     set_globe_state(GlobeState.AUTO_MOVING);
     
   }, [current_question_index, questions_length, anim_nugget_controls, anim_question_controls]);
+
+  const handle_debug_clicked = useCallback(() => {
+    set_game_state(GameState.SUBMIT);
+    set_globe_state(GlobeState.AUTO_MOVING);
+  }, [])
   /* -------------------------------------------------------------------------- */
 
   /*
@@ -351,6 +358,14 @@ export default function main() {
           controls={anim_result_controls}
         />
       }
+      {game_state == GameState.SUBMIT &&
+        <SubmitCard
+        />
+      }
+      {/* Debug panel */}
+        <DebugPanel
+          onDebugClicked={handle_debug_clicked}
+        />
     </main>
   )
 }

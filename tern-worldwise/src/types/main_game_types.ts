@@ -3,6 +3,7 @@ export enum GameState {
     MENU,
     ROUND,
     RESULT,
+    SUBMIT
 }
 
 export enum RoundState {
