@@ -3,14 +3,20 @@
   --col-secondary: #33506A; /* Blau */
   --col-dark: #273C48;      /* dunkles Blau */
   --col-light: #FFFCF9;     /* Off-White */
+  --col-light-medium: #F2F0EF;
   --col-light-darker: #E9E4E0;
+  --col-border: #D9D9D9;
   --col-accent: #FAD6A5;    /* Beige */
   --col-correct: #00d492;
   --col-wrong: #BE1526;
 
+  /* gradients */
+  --grad-light: linear-gradient(-137deg, var(--col-light) 13%, var(--col-light-medium) 67%);
+
   --font-col-dark: #1B292B;      /* text schwarz */
 
   --border-radius-main: 8px;
+  --border-radius-second: 5px;
 
   /* abgeleitete Variablen */
   --bg-overlay: rgba(255, 252, 249, 0.9); /* Off-White mit Transparenz */
