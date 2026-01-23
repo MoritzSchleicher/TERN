@@ -1,6 +1,10 @@
 :root {
   --col-primary: #BE1526;   /* kräftiges Rot */
   --col-secondary: #33506A; /* Blau */
+    --col-secondary_70: rgba(51, 80, 106, 0.7);
+    --col-secondary_30: rgba(51, 80, 106, 0.3);
+    --col-secondary_20: rgba(51, 80, 106, 0.2);
+    --col-secondary_10: rgba(51, 80, 106, 0.1);
   --col-dark: #273C48;      /* dunkles Blau */
   --col-light: #FFFCF9;     /* Off-White */
   --col-light-medium: #F2F0EF;
@@ -26,4 +30,7 @@
   
   --font-main: var(--font-manrope);        /* Manrope */
   --font-second: var(--font-newsreader);   /* Newsreader */
+
+  /* font size */
+  --font-size-button: 2.8dvh;
 }

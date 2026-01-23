@@ -1,11 +1,12 @@
 import { input } from "framer-motion/client";
 
 type TextInputProps = {
-  onInput: (input: string) => void;
-  headline: string,
+    name: string,
+    headline: string,
+    placeholder?: string
 };
 
-export function TextInput({ onInput, headline }: TextInputProps){
+export function TextInput({ name, headline, placeholder }: TextInputProps){
     return (
         <div
             className="
@@ -29,10 +30,9 @@ export function TextInput({ onInput, headline }: TextInputProps){
             </span>
             <input
                 type="text"
+                name={name}
                 maxLength={75}
-                onInput={(e) => 
-                    onInput((e.target as HTMLInputElement).value)
-                }
+                placeholder={placeholder}
                 autoComplete="off"
                 className="   
                     w-full  
@@ -43,6 +43,8 @@ export function TextInput({ onInput, headline }: TextInputProps){
                     rounded-[var(--border-radius-second)]
                     px-2       
                     text-[2.18dvh]
+                    outline-none
+                    focus-visible:border-[var(--col-secondary)]
                 "
             >            
             </input>

@@ -311,6 +311,8 @@ export default function GlobeView({ onReady, globe_state }: Props) {
 
       // Menü-Pose: Zielpunkt (Target) leicht ÜBER dem Globus-Zentrum → halber Globus sichtbar
       async function toMenuPose(ms = 900): Promise<void> {        
+        const offsetPromise = tweenViewOffsetX(0, Math.min(ms, ms));
+
         const R = Constants.GLOBE.RADIUS;
         const CENTER = Constants.GLOBE.CENTER; // Vector3(0,0,0) in deinen Constants
         const target = new Vector3(CENTER.x, CENTER.y + R * 1, CENTER.z); // ~38% des Radius nach oben
@@ -328,13 +330,16 @@ export default function GlobeView({ onReady, globe_state }: Props) {
 
         // (optional) kurz Auto-Rotate aus während der Fahrt:
         const prevAuto = controls.autoRotate; controls.autoRotate = false;
-        await tweenCamAndTarget(camPos, target, ms);
+        await Promise.all([
+          tweenCamAndTarget(camPos, target, ms),
+          offsetPromise,
+        ]);
         controls.autoRotate = prevAuto;
       }
 
       // Start-Pose: zurück auf deine START_POS + Target wieder Zentrum
       async function toStartPose(ms = 900): Promise<void> {
-        const offsetPromise = tweenViewOffsetX(0, Math.min(450, ms));
+        const offsetPromise = tweenViewOffsetX(0, Math.min(ms, ms));
 
         if (activeTween) cancelAnimationFrame(activeTween);
         resolveCurrentFlight?.();
@@ -390,7 +395,7 @@ export default function GlobeView({ onReady, globe_state }: Props) {
 
       // Submit-Pose: wie START_POS + Target wieder Zentrum
       async function toSubmitPose(ms = 900): Promise<void> {
-        const offsetPromise = tweenViewOffsetX(Constants.GLOBE.SUBMIT_SCREEN_OFFSET_PX, Math.min(450, ms));
+        const offsetPromise = tweenViewOffsetX(Constants.GLOBE.SUBMIT_SCREEN_OFFSET_PX, Math.min(ms, ms));
 
         if (activeTween) cancelAnimationFrame(activeTween);
         resolveCurrentFlight?.();

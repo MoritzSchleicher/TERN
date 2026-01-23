@@ -1,12 +1,77 @@
 import { motion } from "framer-motion";
 import { TextInput } from "./TextInput";
 import { useCallback } from "react";
+import { ButtonType, SubmitPayload } from "@/types/general_data_types";
+import { MainButton } from "./MainButton";
+import { SecondaryButton } from "./SecondaryButton";
 
-export function SubmitCard(){
+type SubmitCardProps = {
+  onBack: () => void;
+}
+export function SubmitCard({onBack}: SubmitCardProps){
+    /*
+    ╔═════════════════════════════════════════════════════════════════════════════╗
+    ║                                                                             ║
+    ║                               HANDLER                                       ║
+    ║                                                                             ║
+    ╚═════════════════════════════════════════════════════════════════════════════╝
+    */
+    const handle_submit = (e: React.FormEvent<HTMLFormElement>) => {
+        e.preventDefault()
+        const data = new FormData(e.currentTarget)
 
-    const handle_input = useCallback((input: string) => {
-        console.log("input: " + input);
-    },[])
+        const question = getString(data, "question")
+        const correct_answer = getString(data, "correct_answer")
+
+        const email = getOptionalString(data, "email")
+        const terms_accepted = data.get("terms") === "on"
+
+        if (!question || !correct_answer) return
+        if (email && !terms_accepted) return
+
+        const payload: SubmitPayload = {
+            question,
+            correct_answer,
+            wrong_answer_a: getOptionalString(data, "wrong_answer_a"),
+            wrong_answer_b: getOptionalString(data, "wrong_answer_b"),
+            lat: getOptionalNumber(data, "lat"),
+            long: getOptionalNumber(data, "long"),
+            ...(email ? { email, terms_accepted } : {}),
+        }
+
+        console.log(payload)
+    }
+
+    const handle_on_back = () => {
+        onBack;
+    }
+    /* -------------------------------------------------------------------------- */
+
+    /*
+    ╔═════════════════════════════════════════════════════════════════════════════╗
+    ║                                                                             ║
+    ║                               HELPERS                                       ║
+    ║                                                                             ║
+    ╚═════════════════════════════════════════════════════════════════════════════╝
+    */
+    const getString = (data: FormData, key: string) => {
+        const v = data.get(key)
+        return typeof v === "string" ? v.trim() : ""
+    }
+
+    const getOptionalString = (data: FormData, key: string) => {
+        const s = getString(data, key)
+        return s.length ? s : undefined
+    }
+
+    const getOptionalNumber = (data: FormData, key: string) => {
+        const s = getString(data, key)
+        if (!s) return undefined
+        const n = Number(s.replace(",", ".")) // falls User Komma eintippt
+        return Number.isFinite(n) ? n : undefined
+    }
+
+    /* -------------------------------------------------------------------------- */
 
     return (
         <motion.div
@@ -37,9 +102,10 @@ export function SubmitCard(){
                 after:left-1/2
                 after:-translate-x-1/2
                 after:h-full
-                after:w-[2px]
+                after:w-[5px]
                 after:bg-[var(--col-light)]
                 after:pointer-events-none
+                after:z-[-1]
             "
         >
             <div
@@ -69,7 +135,8 @@ export function SubmitCard(){
             >
 
             </div>
-            <div
+            <form
+                onSubmit={handle_submit}
                 className="
                     relative
                     h-full
@@ -101,11 +168,11 @@ export function SubmitCard(){
                 >
                     <div
                         className="
-                            h-auto
+                            h-full
                             w-full
                             flex
                             flex-col
-                            gap-[2.94dvh]
+                            gap-[2.5dvh]
                         "
                     >
                         <div 
@@ -114,7 +181,7 @@ export function SubmitCard(){
                                 w-full
                                 flex
                                 flex-col
-                                gap-[2.94dvh]
+                                gap-[2.5dvh]
                                 px-6
                                 pt-2
                             "
@@ -126,13 +193,13 @@ export function SubmitCard(){
                             >
                                 Reiche deine Frage ein!
                             </h1>
-                            <TextInput onInput={handle_input} headline="Frage"></TextInput>
+                            <TextInput name="question"  headline="Frage" placeholder="Was kostet die Welt?"></TextInput>
                             
-                            <TextInput onInput={handle_input} headline="Richtige Antwort"></TextInput>
+                            <TextInput name="correct_answer"  headline="Richtige Antwort"></TextInput>
                             
-                            <TextInput onInput={handle_input} headline="Falsche Antwort A (optional)"></TextInput>
+                            <TextInput name="wrong_answer_a"  headline="Falsche Antwort A"></TextInput>
                             
-                            <TextInput onInput={handle_input} headline="Falsche Antwort B (optional)"></TextInput>
+                            <TextInput name="wrong_answer_b"  headline="Falsche Antwort B"></TextInput>
 
                             <div
                                 className="
@@ -143,8 +210,8 @@ export function SubmitCard(){
                                     gap-[1dvw]
                                 "
                             >
-                                <TextInput onInput={handle_input} headline="Lat (optional)"></TextInput>
-                                <TextInput onInput={handle_input} headline="Long (optional)"></TextInput>
+                                <TextInput name="lat"  headline="Längengrad"></TextInput>
+                                <TextInput name="long"  headline="Breitengrad"></TextInput>
                             </div>
                         </div>
                         <div
@@ -162,9 +229,10 @@ export function SubmitCard(){
                                 flex-col
                                 gap-[1dvh]
                                 px-6
+                                justify-between
                             "
                         >
-                            <TextInput onInput={handle_input} headline="Email (optional)"></TextInput>
+                            <TextInput name="email"  headline="Email (optional)"></TextInput>
                             <div
                                 className="
                                     w-full
@@ -175,7 +243,7 @@ export function SubmitCard(){
                                     px-2   
                                 "
                             >
-                                <input type="checkbox"></input>
+                                <input type="checkbox" name="terms"></input>
                                 <span>
                                     Hiermit stimme ich den <a href="www.google.de">TERMs</a> zu
                                 </span>
@@ -185,20 +253,18 @@ export function SubmitCard(){
                                     flex
                                     flex-row
                                     w-full
+                                    gap-[1.1dvw]
                                     justify-between
                                 "
                             >
-                                <button type="button">
-                                    Zurück
-                                </button>
-                                <button type="button">
-                                    Einreichen
-                                </button>
+                                <SecondaryButton onClick={onBack} text="Zurück" type={ButtonType.BUTTON}></SecondaryButton>
+                                
+                                <MainButton text="Einreichen" type={ButtonType.SUBMIT} ></MainButton>
                             </div>
                         </div>
                     </div>
                 </div>
-            </div>
+            </form>
         </motion.div>
     )
 }

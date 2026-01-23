@@ -5,8 +5,7 @@ import { UIMainCard } from "../ui/UIMainCard";
 import { GameState } from "@/types/main_game_types";
 
 type ScreenResultProps = {
-  onPlayAgain: () => void;
-  onBack: () => void;
+  onContinue: () => void;
   score: number,
   total: number,
   game_state: GameState,
@@ -26,7 +25,7 @@ function getResultHeadline(score: number, total: number): string {
   return "Versuch es nochmal!";
 }
 
-export default function ScreenResult({ onPlayAgain, onBack, score, total, game_state, controls }: ScreenResultProps) {
+export default function ScreenResult({ onContinue, score, total, game_state, controls }: ScreenResultProps) {
   useEffect(() => {
     if(game_state !== GameState.RESULT) return;
 
@@ -85,39 +84,18 @@ export default function ScreenResult({ onPlayAgain, onBack, score, total, game_s
                   className="
                     w-full
                     h-[5dvh]
-                    cursor-pointer
                     rounded-xl
                     bg-[var(--col-secondary)]
                     px-[0.26dvw]
                     py-[0.22dvh]
-                    font-medium
                     text-[1.74dvh]
                     font-medium
                     text-white 
                     cursor-pointer
                     "
-                  onClick={onPlayAgain}
+                  onClick={onContinue}
               >
-                  Nochmal
-              </button>
-              <button
-                  className="
-                    w-full
-                    h-[5dvh]
-                    cursor-pointer
-                    rounded-xl
-                    bg-[var(--col-secondary)]
-                    px-[0.26dvw]
-                    py-[0.22dvh]
-                    font-medium
-                    text-[1.74dvh]
-                    font-medium
-                    text-white 
-                    cursor-pointer
-                    "
-                  onClick={onBack}
-              >
-                  Zurück
+                  Weiter
               </button>
           </div>
         </div>

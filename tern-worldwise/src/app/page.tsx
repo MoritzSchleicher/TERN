@@ -21,6 +21,7 @@ import { Question } from "@/types/question_types";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
 import { DebugPanel } from "@/components/DebugPanel";
 import { SubmitCard } from "@/components/ui/SubmitCard";
+import ScreenSubmit from "@/components/screens/ScreenSubmit";
 
 // *────────────────────────────────
 // * LEARN: In React erbt man nicht von Components,
@@ -149,6 +150,19 @@ export default function main() {
 
     await globe_api_ref.current!.toMenuPose(800);
   }, [anim_result_controls]); 
+
+  const handle_continue_clicked = useCallback(async () => {
+    const ratio = score_count / questions_length;
+    if (ratio >= 0.5){
+      set_game_state(GameState.SUBMIT);
+      set_globe_state(GlobeState.AUTO_MOVING);
+      globe_api_ref.current?.clearPin?.();
+      await globe_api_ref.current!.toSubmitPose(800);
+      return;
+    };
+
+    handle_end_clicked();    
+  }, [score_count, questions_length, handle_end_clicked]); 
 
   //evaluate result, handle UI and globe, shows nugget 
   const handle_answer_clicked = useCallback(
@@ -353,14 +367,15 @@ export default function main() {
         <ScreenResult
           score = {score_count}
           total = {questions_length}
-          onPlayAgain={handle_start_button_clicked}
-          onBack={handle_end_clicked}
+          onContinue={handle_continue_clicked}
           game_state={game_state}
           controls={anim_result_controls}
         />
       }
       {game_state == GameState.SUBMIT &&
-        <SubmitCard
+        <ScreenSubmit
+          onBack={handle_end_clicked} 
+          game_state={game_state}
         />
       }
       {/* Debug panel */}
