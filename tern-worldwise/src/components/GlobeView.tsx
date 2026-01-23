@@ -15,6 +15,7 @@ export type GlobeAPI = {
   clearPin: () => void;
   toMenuPose: (ms?: number) => Promise<void>;
   toStartPose: (ms?: number) => Promise<void>;
+  toSubmitPose: (ms?: number) => Promise<void>;
   zoomOutToStart: (ms?: number) => Promise<void>;
 };
 
@@ -183,8 +184,61 @@ export default function GlobeView({ onReady, globe_state }: Props) {
         renderer.setSize(clientWidth, clientHeight);
         camera.aspect = clientWidth / clientHeight;
         camera.updateProjectionMatrix();
+
+        // view offset neu anwenden (wichtig!)
+        if (currentViewOffsetX) applyViewOffsetX(currentViewOffsetX);
       };
       window.addEventListener("resize", onResize);
+
+      let currentViewOffsetX = 0;
+      let activeViewOffsetTween = 0;
+      let resolveCurrentViewOffsetTween: (() => void) | null = null;
+
+      function applyViewOffsetX(px: number) {
+        currentViewOffsetX = px;
+
+        const fullW = el!.clientWidth;
+        const fullH = el!.clientHeight;
+
+        if (!px) {
+          camera.clearViewOffset();
+        } else {
+          camera.setViewOffset(fullW, fullH, px, 0, fullW, fullH);
+        }
+        camera.updateProjectionMatrix();
+      }
+
+      function tweenViewOffsetX(toPx: number, ms = 400): Promise<void> {
+        if (activeViewOffsetTween) cancelAnimationFrame(activeViewOffsetTween);
+        resolveCurrentViewOffsetTween?.();
+
+        const fromPx = currentViewOffsetX;
+        const t0 = performance.now();
+
+        return new Promise<void>((resolve) => {
+          resolveCurrentViewOffsetTween = resolve;
+
+          const step = () => {
+            const t = Math.min(1, (performance.now() - t0) / ms);
+            const k = easeInOutCubic(t);
+            const px = fromPx + (toPx - fromPx) * k;
+
+            applyViewOffsetX(px);
+
+            if (t < 1) {
+              activeViewOffsetTween = requestAnimationFrame(step);
+            } else {
+              activeViewOffsetTween = 0;
+              resolveCurrentViewOffsetTween = null;
+              resolve();
+            }
+          };
+
+          activeViewOffsetTween = requestAnimationFrame(step);
+        });
+      }
+
+
 
       /*
       ╔═════════════════════════════════════════════════════════════════════════════╗
@@ -256,7 +310,7 @@ export default function GlobeView({ onReady, globe_state }: Props) {
       }
 
       // Menü-Pose: Zielpunkt (Target) leicht ÜBER dem Globus-Zentrum → halber Globus sichtbar
-      async function toMenuPose(ms = 900): Promise<void> {
+      async function toMenuPose(ms = 900): Promise<void> {        
         const R = Constants.GLOBE.RADIUS;
         const CENTER = Constants.GLOBE.CENTER; // Vector3(0,0,0) in deinen Constants
         const target = new Vector3(CENTER.x, CENTER.y + R * 1, CENTER.z); // ~38% des Radius nach oben
@@ -280,6 +334,8 @@ export default function GlobeView({ onReady, globe_state }: Props) {
 
       // Start-Pose: zurück auf deine START_POS + Target wieder Zentrum
       async function toStartPose(ms = 900): Promise<void> {
+        const offsetPromise = tweenViewOffsetX(0, Math.min(450, ms));
+
         if (activeTween) cancelAnimationFrame(activeTween);
         resolveCurrentFlight?.();
 
@@ -324,11 +380,69 @@ export default function GlobeView({ onReady, globe_state }: Props) {
         const prevAuto = controls.autoRotate; 
         controls.autoRotate = false;
 
-        await tweenCamAndTarget(camPos, CENTER, ms);
+        await Promise.all([
+          tweenCamAndTarget(camPos, CENTER, ms),
+          offsetPromise,
+        ]);
 
         controls.autoRotate = prevAuto;
       }
 
+      // Submit-Pose: wie START_POS + Target wieder Zentrum
+      async function toSubmitPose(ms = 900): Promise<void> {
+        const offsetPromise = tweenViewOffsetX(Constants.GLOBE.SUBMIT_SCREEN_OFFSET_PX, Math.min(450, ms));
+
+        if (activeTween) cancelAnimationFrame(activeTween);
+        resolveCurrentFlight?.();
+
+        const CENTER = Constants.GLOBE.CENTER.clone();
+
+        const isPortrait = window.matchMedia("(orientation: portrait)").matches;
+        const isSmallScreen = window.matchMedia("(max-width: 767px)").matches;
+
+        const isPhonePortrait = isPortrait && isSmallScreen;
+
+        let x = Constants.GLOBE.SUBMIT_POS.x;
+        let y = Constants.GLOBE.SUBMIT_POS.y;
+        let z = Constants.GLOBE.SUBMIT_POS.z;
+
+        if(isPhonePortrait){
+          x = Constants.GLOBE.RESP_SUBMIT_POS.x;
+          y = Constants.GLOBE.RESP_SUBMIT_POS.y;
+          z = Constants.GLOBE.RESP_SUBMIT_POS.z;
+        }
+
+        // Start-Radius aus deiner START_POS
+        const startR = new Vector3(
+          x,
+          y,
+          z
+        ).length();
+
+        // aktuelle Blickrichtung aus den Controls holen
+        const theta = controls.getAzimuthalAngle(); // links/rechts beibehalten
+        const phi   = controls.getPolarAngle();     // hoch/runter beibehalten
+
+        // (optional) gegen Control-Limits klemmen, damit nichts "snapt"
+        const phiMin = (controls as any).minPolarAngle ?? 0;
+        const phiMax = (controls as any).maxPolarAngle ?? Math.PI;
+        const phiClamped = Math.min(Math.max(phi, phiMin + 1e-3), phiMax - 1e-3);
+
+        // Ziel-Position: gleicher Winkel, nur Radius = Start-Radius
+        const camPos = new Vector3()
+          .setFromSphericalCoords(startR, phiClamped, theta)
+          .add(CENTER); // falls CENTER != (0,0,0)
+
+        const prevAuto = controls.autoRotate; 
+        controls.autoRotate = false;
+
+        await Promise.all([
+          tweenCamAndTarget(camPos, CENTER, ms),
+          offsetPromise,
+        ]);
+
+        controls.autoRotate = prevAuto;
+      }
       
       function zoomToDistance(distTarget: number, ms = 800): Promise<void> {
         if (activeTween) cancelAnimationFrame(activeTween);
@@ -468,7 +582,7 @@ export default function GlobeView({ onReady, globe_state }: Props) {
       ╚═══════════════════════════════════════╝
       */
       await Promise.all([globeReady, countriesReady]);
-      onReadyRef.current?.({ flyTo, setPin, clearPin, toMenuPose, toStartPose, zoomOutToStart });
+      onReadyRef.current?.({ flyTo, setPin, clearPin, toMenuPose, toStartPose, toSubmitPose, zoomOutToStart });
       // *────────────────────────────────
       // * LEARN: Ein Custom Hook ist wie eine kleine "öffentliche API".
       // * Er gibt State + Funktionen zurück, die jede Komponente nutzen kann,
@@ -507,7 +621,10 @@ export default function GlobeView({ onReady, globe_state }: Props) {
       */
       cleanupExtraListeners = () => {
         window.removeEventListener("resize", onResize);
-        if (activeTween) cancelAnimationFrame(activeTween);
+        if (activeViewOffsetTween) cancelAnimationFrame(activeViewOffsetTween);
+        resolveCurrentViewOffsetTween?.();
+        resolveCurrentViewOffsetTween = null;
+
       };
     })
     ();

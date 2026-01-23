@@ -260,9 +260,10 @@ export default function main() {
     
   }, [current_question_index, questions_length, anim_nugget_controls, anim_question_controls]);
 
-  const handle_debug_clicked = useCallback(() => {
+  const handle_debug_clicked = useCallback(async () => {
     set_game_state(GameState.SUBMIT);
     set_globe_state(GlobeState.AUTO_MOVING);
+    await globe_api_ref.current!.toSubmitPose(800);
   }, [])
   /* -------------------------------------------------------------------------- */
 
