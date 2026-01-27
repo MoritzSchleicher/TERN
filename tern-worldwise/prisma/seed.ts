@@ -20,6 +20,8 @@ async function main() {
         lat: q.location.lat,
         lng: q.location.lng,
         country: q.location.country,
+        createdBy: "system",
+        status: "approved",
       },
     });
   }
@@ -29,7 +31,7 @@ async function main() {
 
 main()
   .catch((e) => {
-    console.error(e);
+    console.error("❌ Seeding failed:", e);
     process.exit(1);
   })
   .finally(async () => {

@@ -38,6 +38,7 @@ enum SubmissionStatus {
 enum ModerationStatus {
   approved
   pending
+  processing
   rejected
 }
 

@@ -17,13 +17,32 @@ npm run dev
 or
 
 ```bash
-npx next dev -p 3000
+npx next dev -p 8000
 ```
 
-Open [http://localhost:3000] with your browser to see the result.
+Open [http://localhost:8000] with your browser to see the result.
 
 
 ## Database (Prisma + PostgreSQL / Neon)
+### Prisma workflow (IMPORTANT – Windows)
+
+⚠️ Do NOT run `next dev` or Prisma Studio while running Prisma CLI commands.
+Windows locks the Prisma engine DLL.
+
+Correct order:
+# 1 Stop all node processes (next dev, prisma studio, etc.)
+# 2 Reset DB and apply migrations
+npx prisma migrate reset --force
+
+# 3 Generate Prisma client
+npx prisma generate
+
+# 4 (Optional) Open Prisma Studio
+npx prisma studio
+
+# 5 Start Next.js AFTER Prisma commands
+npm run dev
+
 
 Make sure the `.env` file contains a valid connection string
 
@@ -33,16 +52,13 @@ DATABASE_URL="postgresql://user:password@host/dbname?sslmode=require"
 
 Apply migrations and generate Prisma client
 
-```bash
 npx prisma migrate dev --name init
 npx prisma generate
 ```
 
 Open Prisma Studio (local DB UI) at [http://localhost:5555]:
 
-```bash
 npx prisma studio
-```
 
 
 ## Editing the page
