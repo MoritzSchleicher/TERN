@@ -122,8 +122,7 @@ export default function ScreenRound({
                 <AnswerButton
                   key={`${text}-${originalIndex}`}
                   onAnswerClicked={() => onAnswer(originalIndex)}               
-                  text={text}
-                  label={String.fromCharCode(65 + i)}                           
+                  text={text}                         
                   disabled={round_state !== RoundState.QUESTION}
                   selected={isSelected}
                   result={is_correct}

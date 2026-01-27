@@ -20,7 +20,6 @@ import { TimeController } from "@/service/time_controller";
 import { Question } from "@/types/question_types";
 import LoadingSpinner from "@/components/ui/LoadingSpinner";
 import { DebugPanel } from "@/components/DebugPanel";
-import { SubmitCard } from "@/components/ui/SubmitCard";
 import ScreenSubmit from "@/components/screens/ScreenSubmit";
 
 // *────────────────────────────────
