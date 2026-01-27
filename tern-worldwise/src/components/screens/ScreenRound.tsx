@@ -2,7 +2,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { UIOverlay } from "../ui/UIOverlay";
 import { QuestionCard } from "../ui/QuestionCard";
-import { AnswerButton } from "../ui/AnswerButton";
+import { AnswerButton } from "../ui/buttons/AnswerButton";
 import { BottomUI } from "../ui/BottomUI";
 import { Archive } from "../ui/Archive";
 import { Nugget } from "../ui/Nugget";

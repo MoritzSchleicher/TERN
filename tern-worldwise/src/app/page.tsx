@@ -152,17 +152,11 @@ export default function main() {
   }, [anim_result_controls]); 
 
   const handle_continue_clicked = useCallback(async () => {
-    const ratio = score_count / questions_length;
-    if (ratio >= 0.5){
       set_game_state(GameState.SUBMIT);
       set_globe_state(GlobeState.AUTO_MOVING);
       globe_api_ref.current?.clearPin?.();
-      await globe_api_ref.current!.toSubmitPose(800);
-      return;
-    };
-
-    handle_end_clicked();    
-  }, [score_count, questions_length, handle_end_clicked]); 
+      await globe_api_ref.current!.toSubmitPose(800);   
+  }, []); 
 
   //evaluate result, handle UI and globe, shows nugget 
   const handle_answer_clicked = useCallback(

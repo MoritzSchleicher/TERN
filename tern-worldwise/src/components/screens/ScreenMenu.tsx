@@ -3,6 +3,8 @@ import React, { useEffect } from "react";
 import { UIOverlay } from "../ui/UIOverlay";
 import { UIMainCard } from "../ui/UIMainCard";
 import { GameState } from "@/types/main_game_types";
+import { MainButton } from "../ui/buttons/MainButton";
+import { ButtonType } from "@/types/general_data_types";
 
 type ScreenMenuProps = {
   onStart: () => void;
@@ -58,24 +60,7 @@ export default function ScreenMenu({ onStart, game_state, controls }: ScreenMenu
                   w-full
                   h-full
               ">
-              <button
-                  className="
-                    w-full
-                    h-[5dvh]
-                    cursor-pointer
-                    rounded-xl
-                    bg-[var(--col-secondary)]
-                    px-[0.26dvw]
-                    py-[0.22dvh]
-                    font-medium
-                    text-[1.74dvh]
-                    text-white 
-                    cursor-pointer
-                    "
-                  onClick={onStart}
-              >
-                  Spiel starten
-              </button>
+              <MainButton text="Spiel starten" type={ButtonType.BUTTON} onClick={onStart}></MainButton>
           </div>
         </div>
       </UIMainCard>

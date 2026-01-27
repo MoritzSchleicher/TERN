@@ -2,8 +2,8 @@ import { motion } from "framer-motion";
 import { TextInput } from "./TextInput";
 import { useCallback } from "react";
 import { ButtonType, SubmitPayload } from "@/types/general_data_types";
-import { MainButton } from "./MainButton";
-import { SecondaryButton } from "./SecondaryButton";
+import { MainButton } from "./buttons/MainButton";
+import { SecondaryButton } from "./buttons/SecondaryButton";
 
 type SubmitCardProps = {
   onBack: () => void;

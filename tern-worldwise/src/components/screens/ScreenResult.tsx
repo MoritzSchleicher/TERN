@@ -95,7 +95,7 @@ export default function ScreenResult({ onContinue, score, total, game_state, con
                     "
                   onClick={onContinue}
               >
-                  Weiter
+                Weiter
               </button>
           </div>
         </div>
