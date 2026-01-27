@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { CreatedBy, ModerationStatus, QuestionCreate } from "@/lib/schemas/question.schema";
-import { toQuestionDTO } from "@/lib/dto/question.dto";
+import { toQuestionDTO } from "@/lib/helpers/question.dto";
 
 
 /**

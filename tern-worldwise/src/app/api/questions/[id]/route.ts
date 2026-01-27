@@ -17,9 +17,9 @@ import { fail, ok } from "../../utils/response";
 const Id = z.object({ id: z.string().min(1) });
 const QuestionPatch = QuestionCreate.partial(); 
 
-export async function GET(_: NextRequest, ctx: { params: { id: string } }) {
+export async function GET(_: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const { id } = Id.parse(ctx.params);
+    const { id } = await params;
     const item = await prisma.question.findUnique({ where: { id } });
     if (!item) return fail("Not found", 404);
     return ok(item);
@@ -28,9 +28,9 @@ export async function GET(_: NextRequest, ctx: { params: { id: string } }) {
   }
 }
 
-export async function PATCH(req: NextRequest, ctx: { params: { id: string } }) {
+export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const { id } = Id.parse(ctx.params);
+    const { id } = await params;
     const json = await req.json();
     const data = QuestionPatch.parse(json);
 
@@ -64,9 +64,9 @@ export async function PATCH(req: NextRequest, ctx: { params: { id: string } }) {
   }
 }
 
-export async function DELETE(_: NextRequest, ctx: { params: { id: string } }) {
+export async function DELETE(_: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const { id } = Id.parse(ctx.params);
+    const { id } = await params;
     await prisma.question.delete({ where: { id } });
     return ok({ id });
   } catch (e: any) {

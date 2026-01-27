@@ -5,7 +5,7 @@ import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { fail, ok } from "../utils/response";
 import { QuestionCreate } from "@/lib/schemas/question.schema";
-import { toQuestionDTO } from "@/lib/dto/question.dto";
+import { toQuestionDTO } from "@/lib/helpers/question.dto";
 
 // *────────────────────────────────
 // * LEARN: liest Query-Parameter & baut Prisma-kompatibles where-Objekt
