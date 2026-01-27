@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { CreatedBy, ModerationStatus, QuestionCreate } from "@/lib/schemas/question.schema";
+import { toQuestionDTO } from "@/lib/dto/question.dto";
 
 
 /**
@@ -41,26 +42,13 @@ export async function GET(req: Request) {
   >`
     SELECT id, question, answers, "correctIndex", category, fact, lat, lng, country, status, "createdBy"
     FROM "Question"
+    WHERE status='approved' AND lat IS NOT NULL AND lng IS NOT NULL
     ORDER BY RANDOM()
     LIMIT ${limit};
   `;
 
   // In dein Frontend-Shape mappen (location-Objekt)…
-  const mapped = rows.map((q) => ({
-    id: q.id,
-    question: q.question,
-    answers: q.answers as string[], // jsonb[]
-    correctIndex: q.correctIndex,
-    category: q.category,
-    fact: q.fact ?? "",
-    location: {
-      lat: q.lat ?? 0,
-      lng: q.lng ?? 0,
-      country: q.country ?? "",
-    },
-    createdBy: q.createdBy,
-    status: q.status,
-  }));
+  const mapped = rows.map(toQuestionDTO);
 
   // …und mit Zod absichern (wirft 400, falls was nicht passt)
   try {

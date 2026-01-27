@@ -13,7 +13,7 @@ export type SubmitPayload = {
   wrong_answer_a?: string
   wrong_answer_b?: string
   lat?: number
-  long?: number
+  lng?: number
   email?: string
   terms_accepted?: boolean
 }

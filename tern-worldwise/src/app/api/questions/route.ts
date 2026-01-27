@@ -5,6 +5,7 @@ import { NextRequest } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { fail, ok } from "../utils/response";
 import { QuestionCreate } from "@/lib/schemas/question.schema";
+import { toQuestionDTO } from "@/lib/dto/question.dto";
 
 // *────────────────────────────────
 // * LEARN: liest Query-Parameter & baut Prisma-kompatibles where-Objekt
@@ -52,8 +53,10 @@ export async function GET(req: NextRequest) {
       prisma.question.count({ where }),
     ]);
 
+    const itemsDto = items.map(toQuestionDTO);
+
     return ok({
-      items,
+      items: itemsDto,
       page,
       take,
       total,
@@ -63,6 +66,7 @@ export async function GET(req: NextRequest) {
     return fail("Failed to fetch questions", 500);
   }
 }
+
 
 export async function POST(req: NextRequest) {
   try {
@@ -88,7 +92,7 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    return ok(created, { status: 201 });
+    return ok(toQuestionDTO(created), { status: 201 });
   } catch (e: any) {
     if (e?.name === "ZodError") return fail("Validation failed", 400, e.flatten());
     return fail("Failed to create question", 500);

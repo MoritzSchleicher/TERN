@@ -52,7 +52,7 @@ export default function ScreenSubmit({ onBack, game_state }: ScreenSubmitProps) 
   ║                                                                             ║
   ╚═════════════════════════════════════════════════════════════════════════════╝
   */
-  const handle_submit = (e: React.FormEvent<HTMLFormElement>) => {
+  const handle_submit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const data = new FormData(e.currentTarget);
 
@@ -71,11 +71,25 @@ export default function ScreenSubmit({ onBack, game_state }: ScreenSubmitProps) 
       wrong_answer_a: getOptionalString(data, "wrong_answer_a"),
       wrong_answer_b: getOptionalString(data, "wrong_answer_b"),
       lat: getOptionalNumber(data, "lat"),
-      long: getOptionalNumber(data, "long"),
+      lng: getOptionalNumber(data, "lng"),
       ...(email ? { email, terms_accepted } : {}),
     };
 
-    console.log(payload);
+    const res = await fetch("/api/questions/submit", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => null);
+      console.error("submit failed", err);
+      return;
+    }
+
+    const out = await res.json();
+    console.log("submitted", out);
+    onBack(); // oder weiter screen / success message
   };
 
   return (
@@ -212,8 +226,8 @@ export default function ScreenSubmit({ onBack, game_state }: ScreenSubmitProps) 
                     gap-[1dvw]
                   "
                 >
-                  <TextInput name="lat" headline="Längengrad" />
-                  <TextInput name="long" headline="Breitengrad" />
+                  <TextInput name="lat" headline="Breitengrad" />
+                  <TextInput name="lng" headline="Längengrad" />
                 </div>
               </div>
 

@@ -11,8 +11,8 @@ generator client {
 
 datasource db {
   provider  = "postgresql"
-  url       = env("DATABASE_URL")          
-  directUrl = env("DATABASE_URL_UNPOOLED")    
+  url       = env("DATABASE_URL")
+  directUrl = env("DATABASE_URL_UNPOOLED")
 }
 
 // ===== Enums =====
@@ -28,6 +28,13 @@ enum CreatedBy {
   user
 }
 
+enum SubmissionStatus {
+  pending
+  processing
+  accepted
+  rejected
+}
+
 enum ModerationStatus {
   approved
   pending
@@ -41,24 +48,26 @@ enum ModerationStatus {
 
 // ===== Models =====
 model Question {
-  id            String            @id @default(cuid())
-  category      Category
-  question      String
-  answers       String[]          // Postgres-Array, z.B. ["A","B","C"]
-  correctIndex  Int               // Index in 'answers' (0-basiert – im Code validieren)
+  id           String   @id @default(cuid())
+  category     Category
+  question     String
+  answers      String[] // Postgres-Array, z.B. ["A","B","C"]
+  correctIndex Int // Index in 'answers' (0-basiert – im Code validieren)
   // location
-  lat           Float             // z.B. 52.5200
-  lng           Float             // z.B. 13.4050
-  country       String            // ISO-Name oder Exonym (z.B. "Deutschland")
-  fact          String
+  lat          Float // z.B. 52.5200
+  lng          Float // z.B. 13.4050
+  country      String // ISO-Name oder Exonym (z.B. "Deutschland")
+  fact         String
 
-  createdBy     CreatedBy         @default(system)
+  createdBy       CreatedBy @default(system)
   // Optionaler Autor, falls createdBy = user
-  createdByUserId String?         
-  createdByUser   User?           @relation(fields: [createdByUserId], references: [id])
+  createdByUserId String?
+  createdByUser   User?     @relation(fields: [createdByUserId], references: [id])
 
-  status        ModerationStatus  @default(pending)
-  createdAt     DateTime          @default(now()) // entspricht deinem dateAdded
+  status    ModerationStatus @default(pending)
+  createdAt DateTime         @default(now()) // entspricht deinem dateAdded
+
+  generatedFromSubmission QuestionSubmission? @relation("SubmissionToQuestion")
 
   // Indizes für häufige Filter
   @@index([category])
@@ -75,4 +84,31 @@ model User {
   name      String?
   questions Question[] // vom User eingereichte Fragen
   createdAt DateTime   @default(now())
+}
+
+model QuestionSubmission {
+  id            String @id @default(cuid())
+  question      String
+  correctAnswer String
+
+  wrongAnswerA String?
+  wrongAnswerB String?
+
+  lat Float?
+  lng Float?
+
+  email         String?
+  termsAccepted Boolean?
+
+  status SubmissionStatus @default(pending)
+
+  generatedQuestionId String?   @unique
+  generatedQuestion   Question? @relation("SubmissionToQuestion", fields: [generatedQuestionId], references: [id])
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // optional fürs Debugging / Abuse prevention:
+  // ip        String?
+  // userAgent String?
 }
