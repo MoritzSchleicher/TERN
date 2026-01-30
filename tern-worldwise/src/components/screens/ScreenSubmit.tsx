@@ -95,6 +95,7 @@ export default function ScreenSubmit({ onBack, game_state }: ScreenSubmitProps) 
   return (
     <UIOverlay>
       <motion.div
+        id="submit_card"
         className="
           absolute
           pointer-events-none
@@ -126,9 +127,16 @@ export default function ScreenSubmit({ onBack, game_state }: ScreenSubmitProps) 
           after:bg-[var(--col-light)]
           after:pointer-events-none
           after:z-[-1]
+
+          portrait:top-auto
+          portrait:self-center
+          portrait:h-[95%]
+          portrait:w-[95%]
+          
         "
       >
         <div
+          id="left_side"
           className="
             relative
             h-full
@@ -139,6 +147,8 @@ export default function ScreenSubmit({ onBack, game_state }: ScreenSubmitProps) 
             rounded-tl-[var(--border-radius-main)]
             rounded-bl-[var(--border-radius-main)]
             pointer-events-none
+
+            portrait:hidden
 
             [mask-image:linear-gradient(#fff_0_0),url('/assets/form_mask.svg')]
             [mask-repeat:no-repeat,no-repeat]
@@ -155,6 +165,7 @@ export default function ScreenSubmit({ onBack, game_state }: ScreenSubmitProps) 
         ></div>
 
         <form
+          id="right_side"
           onSubmit={handle_submit}
           className="
             relative
@@ -172,9 +183,16 @@ export default function ScreenSubmit({ onBack, game_state }: ScreenSubmitProps) 
             grid-cols-[100%]
             grid-row-[100%]
             gap-[0.87dvh]
+
+            portrait:col-start-1
+            portrait:col-end-3
+            portrait:rounded-[var(--border-radius-main)]
+            portrait:p-2
+            portrait:py-4
           "
         >
           <div
+            id="background"
             className="
               relative
               h-full
@@ -186,15 +204,21 @@ export default function ScreenSubmit({ onBack, game_state }: ScreenSubmitProps) 
             "
           >
             <div
+              id="layout"
               className="
                 h-full
                 w-full
                 flex
                 flex-col
                 gap-[2.5dvh]
+
+                overflow-auto
+
+                custom_scrollbar
               "
             >
               <div
+                id="question_container"
                 className="
                   h-auto
                   w-full
@@ -203,9 +227,11 @@ export default function ScreenSubmit({ onBack, game_state }: ScreenSubmitProps) 
                   gap-[2.5dvh]
                   px-6
                   pt-2
+
+                  portrait:p-2
                 "
               >
-                <h1 className="text-[4.13dvh]">Reiche deine Frage ein!</h1>
+                <span className="text-[4.13dvh]">Reiche deine Frage ein!</span>
 
                 <TextInput
                   name="question"
@@ -213,9 +239,9 @@ export default function ScreenSubmit({ onBack, game_state }: ScreenSubmitProps) 
                   placeholder="Was kostet die Welt?"
                 />
 
-                <TextInput name="correct_answer" headline="Richtige Antwort" />
-                <TextInput name="wrong_answer_a" headline="Falsche Antwort A" />
-                <TextInput name="wrong_answer_b" headline="Falsche Antwort B" />
+                <TextInput name="correct_answer" headline="Richtige Antwort" placeholder="Das Richtige"/>
+                <TextInput name="wrong_answer_a" headline="Falsche Antwort A" placeholder="Das Falsche"/>
+                <TextInput name="wrong_answer_b" headline="Falsche Antwort B" placeholder="Das Lustige"/>
 
                 <div
                   className="
@@ -224,16 +250,21 @@ export default function ScreenSubmit({ onBack, game_state }: ScreenSubmitProps) 
                     grid-cols-[1fr_1fr]
                     grid-rows-[auto]
                     gap-[1dvw]
+
+                    portrait:grid-cols-[auto]
+                    portrait:grid-rows-[1fr_1fr]
+                    portrait:gap-[2.5dvh]
                   "
                 >
-                  <TextInput name="lat" headline="Breitengrad" />
-                  <TextInput name="lng" headline="Längengrad" />
+                  <TextInput name="lat" headline="Breitengrad" placeholder="48°N"/>
+                  <TextInput name="lng" headline="Längengrad" placeholder="7,8°E"/>
                 </div>
               </div>
 
-              <div className="w-full h-[0.87dvh] bg-[var(--col-light)]"></div>
+              <div id="seperator" className="w-full h-[0.87dvh] bg-[var(--col-light)]"></div>
 
               <div
+                id="email_container"
                 className="
                   h-[19dvh]
                   w-full
@@ -242,6 +273,9 @@ export default function ScreenSubmit({ onBack, game_state }: ScreenSubmitProps) 
                   gap-[1dvh]
                   px-6
                   justify-between
+
+                  portrait:px-2
+                  portrait:gap-2
                 "
               >
                 <TextInput name="email" headline="Email (optional)" />
@@ -252,14 +286,14 @@ export default function ScreenSubmit({ onBack, game_state }: ScreenSubmitProps) 
                     h-auto
                     flex
                     flex-row
-                    gap-[0.47dvw]
+                    gap-[8px]
                     px-2
                   "
                 >
-                  <input type="checkbox" name="terms" />
-                  <span>
+                  <input id="terms_box" type="checkbox" name="terms" />
+                  <label htmlFor="terms_box">
                     Hiermit stimme ich den <a href="www.google.de">TERMs</a> zu
-                  </span>
+                  </label>
                 </div>
 
                 <div
@@ -269,6 +303,9 @@ export default function ScreenSubmit({ onBack, game_state }: ScreenSubmitProps) 
                     w-full
                     gap-[1.1dvw]
                     justify-between
+
+                    portrait:flex-col-reverse
+                    portrait:gap-2
                   "
                 >
                   <SecondaryButton

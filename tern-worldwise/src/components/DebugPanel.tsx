@@ -24,10 +24,11 @@ export function DebugPanel({onDebugClicked}: DebugProps) {
         
         shadow-[5px_5px_15px_2px_#00000040]
         
-        portrait:max-md:left-auto
+        portrait:rounded-none
         portrait:max-md:justify-self-center
-        portrait:max-md:top-[21.45vh]
-        portrait:max-md:h-[38dvw]
+        portrait:max-md:bottom-1
+        portrait:max-md:left-1
+        portrait:max-md:h-1
         portrait:max-md:w-auto
         portrait:max-md:aspect-[1/1]
       "
