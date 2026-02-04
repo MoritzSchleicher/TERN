@@ -347,12 +347,12 @@ export default function GlobeView({ onReady, globe_state, game_state }: Props) {
         const camPos = target.clone().add(viewDir.multiplyScalar(dist));
 
         // (optional) kurz Auto-Rotate aus während der Fahrt:
-        const prevAuto = controls.autoRotate; controls.autoRotate = false;
+        controls.autoRotate = false;
         await Promise.all([
           tweenCamAndTarget(camPos, target, ms),
           offsetPromise,
         ]);
-        controls.autoRotate = prevAuto;
+        controls.autoRotate = true;
       }
 
       // Start-Pose: zurück auf deine START_POS + Target wieder Zentrum
@@ -455,8 +455,7 @@ export default function GlobeView({ onReady, globe_state, game_state }: Props) {
         const camPos = new Vector3()
           .setFromSphericalCoords(startR, phiClamped, theta)
           .add(CENTER); // falls CENTER != (0,0,0)
-
-        const prevAuto = controls.autoRotate; 
+ 
         controls.autoRotate = false;
 
         await Promise.all([
@@ -464,7 +463,7 @@ export default function GlobeView({ onReady, globe_state, game_state }: Props) {
           offsetPromise,
         ]);
 
-        controls.autoRotate = prevAuto;
+        controls.autoRotate = false;
       }
       
       function zoomToDistance(distTarget: number, ms = 800): Promise<void> {

@@ -14,14 +14,27 @@ import { ButtonType, SubmitPayload } from "@/types/general_data_types";
 type ScreenSubmitProps = {
   onBack: () => void;
   game_state: GameState;
+  onCoordsChange?: (coords: { lat?: number; lng?: number }) => void;
 };
 
-export default function ScreenSubmit({ onBack, game_state }: ScreenSubmitProps) {
+export default function ScreenSubmit({ onBack, game_state, onCoordsChange }: ScreenSubmitProps) {
+  /* Email */
   useEffect(() => {
     if (game_state !== GameState.SUBMIT) return;
   }, [game_state]);
 
   const [emailFilled, setEmailFilled] = useState(false);
+
+  /* Coords */
+  const [latStr, setLatStr] = useState("");
+  const [lngStr, setLngStr] = useState("");
+
+  useEffect(() => {
+    if (!onCoordsChange) return;
+    const lat = parseCoord(latStr);
+    const lng = parseCoord(lngStr);
+    onCoordsChange({ lat, lng });
+  }, [latStr, lngStr, onCoordsChange]);
 
   /*
   ╔═════════════════════════════════════════════════════════════════════════════╗
@@ -46,6 +59,17 @@ export default function ScreenSubmit({ onBack, game_state }: ScreenSubmitProps) 
     const n = Number(s.replace(",", ".")); // falls User Komma eintippt
     return Number.isFinite(n) ? n : undefined;
   };
+
+  const parseCoord = (s: string): number | undefined => {
+    const cleaned = s
+      .trim()
+      .replace(",", ".")
+      .replace(/[^\d.+-]/g, ""); // entfernt ° N E etc.
+    if (!cleaned) return undefined;
+    const n = Number(cleaned);
+    return Number.isFinite(n) ? n : undefined;
+  };
+
 
   /*
   ╔═════════════════════════════════════════════════════════════════════════════╗
@@ -283,8 +307,8 @@ export default function ScreenSubmit({ onBack, game_state }: ScreenSubmitProps) 
                     portrait:gap-[2.5dvh]
                   "
                 >
-                  <TextInput name="lat" headline="Breitengrad" placeholder="48°N"/>
-                  <TextInput name="lng" headline="Längengrad" placeholder="7,8°E"/>
+                  <TextInput name="lat" headline="Breitengrad" placeholder="48°N" onChange={(e) => setLatStr(e.currentTarget.value)}/>
+                  <TextInput name="lng" headline="Längengrad" placeholder="7,8°E" onChange={(e) => setLngStr(e.currentTarget.value)}/>
                 </div>
               </div>
 

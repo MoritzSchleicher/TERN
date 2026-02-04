@@ -51,6 +51,7 @@ export default function main() {
   const [game_state, set_game_state] = useState<GameState>(GameState.LOADING);
   const [globe_state, set_globe_state] = useState<GlobeState>(GlobeState.LOADING);
   const [round_state, set_round_state] = useState<RoundState>(RoundState.NONE);
+  const [submitCoords, setSubmitCoords] = useState<{ lat?: number; lng?: number }>({});
   // Questions
   const [current_question_index, set_question_index] = useState(0);
   const [questions, set_questions] = useState<Question[]>([]);
@@ -152,7 +153,7 @@ export default function main() {
 
   const handle_continue_clicked = useCallback(async () => {
       set_game_state(GameState.SUBMIT);
-      set_globe_state(GlobeState.AUTO_MOVING);
+      set_globe_state(GlobeState.NO_AUTO_MOVING);
       globe_api_ref.current?.clearPin?.();
       await globe_api_ref.current!.toSubmitPose(800);   
   }, []); 
@@ -267,11 +268,6 @@ export default function main() {
     
   }, [current_question_index, questions_length, anim_nugget_controls, anim_question_controls]);
 
-  const handle_debug_clicked = useCallback(async () => {
-    set_game_state(GameState.SUBMIT);
-    set_globe_state(GlobeState.AUTO_MOVING);
-    await globe_api_ref.current!.toSubmitPose(800);
-  }, [])
   /* -------------------------------------------------------------------------- */
 
   /*
@@ -311,6 +307,42 @@ export default function main() {
       handle_answer_clicked(null);
     });
   }, [time_controller, handle_answer_clicked]);
+
+  useEffect(() => {
+    if (game_state !== GameState.SUBMIT) return;
+
+    const lat = submitCoords.lat;
+    const lng = submitCoords.lng;
+
+    // nur wenn beide da + in Range
+    const valid =
+      typeof lat === "number" &&
+      typeof lng === "number" &&
+      lat >= -90 && lat <= 90 &&
+      lng >= -180 && lng <= 180;
+
+    // debounced, damit nicht bei jedem keystroke sofort geflogen wird
+    const t = window.setTimeout(async () => {
+      const api = globe_api_ref.current;
+      if (!api) return;
+
+      if (!valid) {
+        api.clearPin?.();
+        return;
+      }
+
+      await api.flyTo(lat!, lng!, 1.2, 700); // altitude/ms nach Geschmack
+
+      api.clearPin?.();
+      api.setPin(
+        { lat: lat!, lng: lng!, label: "Vorschau", color: getCssVar("--col-correct") },
+        { altitude: 0.02, radius: 0.45 }
+      );
+    }, 350);
+
+    return () => window.clearTimeout(t);
+  }, [submitCoords.lat, submitCoords.lng, game_state]);
+
   /* -------------------------------------------------------------------------- */
 
   /*
@@ -369,11 +401,12 @@ export default function main() {
         <ScreenSubmit
           onBack={handle_end_clicked} 
           game_state={game_state}
+          onCoordsChange={setSubmitCoords}
         />
       }
       {/* Debug panel */}
         <DebugPanel
-          onDebugClicked={handle_debug_clicked}
+          onDebugClicked={handle_continue_clicked}
         />
     </main>
   )

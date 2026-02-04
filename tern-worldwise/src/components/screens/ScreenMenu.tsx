@@ -37,11 +37,11 @@ export default function ScreenMenu({ onStart, game_state, controls }: ScreenMenu
     <UIOverlay>
       <UIMainCard controls={controls}>
         <div className="
-          grid
-          grid-rows-[auto_auto]
-          grid-cols-[100%]
+          flex
+          flex-col
+          justify-between
           place-items-center
-          gap-4
+          min-h-0
         ">
           <div>
             <h1>
