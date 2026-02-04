@@ -1,5 +1,5 @@
 // components/ScreenSubmit.tsx
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 
 import { UIOverlay } from "../ui/UIOverlay";
@@ -20,6 +20,8 @@ export default function ScreenSubmit({ onBack, game_state }: ScreenSubmitProps) 
   useEffect(() => {
     if (game_state !== GameState.SUBMIT) return;
   }, [game_state]);
+
+  const [emailFilled, setEmailFilled] = useState(false);
 
   /*
   ╔═════════════════════════════════════════════════════════════════════════════╗
@@ -116,7 +118,6 @@ export default function ScreenSubmit({ onBack, game_state }: ScreenSubmitProps) 
           transform-gpu
           ease-out
           motion-reduce:transition-none
-          overflow-hidden
 
           after:content-['']
           after:absolute
@@ -216,7 +217,8 @@ export default function ScreenSubmit({ onBack, game_state }: ScreenSubmitProps) 
                 flex-col
                 gap-[2.5dvh]
 
-                overflow-auto
+                overflow-y-auto
+                overflow-x-visible
 
                 custom_scrollbar
 
@@ -242,13 +244,29 @@ export default function ScreenSubmit({ onBack, game_state }: ScreenSubmitProps) 
               >
                 <span className="text-[4.13dvh]">Reiche deine Frage ein!</span>
 
+                <span 
+                  className="
+                    w-full                
+                    text-[2.18dvh]
+                    text-[var(--font-col-dark)]
+                    px-2
+                    p-2
+                    rounded-[var(--border-radius-second)]
+                    bg-[var(--col-light)]
+                    shadow-[4px_4px_10px_rgba(0,0,0,0.08)]
+                  ">
+                    Pflichtfelder sind mit * markiert.
+                    Nicht ausgefüllte Felder werden KI-gestützt ergänzt.
+                </span>
+
                 <TextInput
                   name="question"
-                  headline="Frage"
+                  headline="Frage*"
                   placeholder="Was kostet die Welt?"
+                  required
                 />
 
-                <TextInput name="correct_answer" headline="Richtige Antwort" placeholder="Das Richtige"/>
+                <TextInput name="correct_answer" headline="Richtige Antwort*" placeholder="Das Richtige" required/>
                 <TextInput name="wrong_answer_a" headline="Falsche Antwort A" placeholder="Das Falsche"/>
                 <TextInput name="wrong_answer_b" headline="Falsche Antwort B" placeholder="Das Lustige"/>
 
@@ -294,7 +312,15 @@ export default function ScreenSubmit({ onBack, game_state }: ScreenSubmitProps) 
                   portrait:gap-2
                 "
               >
-                <TextInput name="email" headline="Email (optional)" />
+                <TextInput
+                 name="email"
+                 headline="Email"
+                 info="
+                    Wenn du über die Annahme deiner Frage informiert werden möchtest,
+                    gib bitte deine E-Mail-Adresse an.
+                  "
+                  onChange={(e) => setEmailFilled(e.currentTarget.value.trim().length > 0)}
+                />
 
                 <div
                   className="
@@ -306,9 +332,18 @@ export default function ScreenSubmit({ onBack, game_state }: ScreenSubmitProps) 
                     px-2
                   "
                 >
-                  <input id="terms_box" type="checkbox" name="terms" />
-                  <label htmlFor="terms_box" className="text-[2.18dvh]">
-                    Hiermit stimme ich den <a href="www.google.de">TERMs</a> zu
+                  <input id="terms_box" type="checkbox" className="cursor-pointer" name="terms" required={emailFilled} />
+                  <label htmlFor="terms_box" className="text-[2.18dvh] cursor-pointer">
+                     Ich stimme den{" "}
+                      <a
+                        href="/terms"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="underline underline-offset-2"
+                      >
+                        Nutzungsbedingungen
+                      </a>{" "}
+                      zu.
                   </label>
                 </div>
 
@@ -325,7 +360,7 @@ export default function ScreenSubmit({ onBack, game_state }: ScreenSubmitProps) 
                     portrait:gap-2
                     portrait:before:content-['']
                     portrait:before:relative
-                    portrait:before:h-[5.3dvh]
+                    portrait:before:h-[1.3dvh]
                     portrait:before:w-full
                   "
                 >
