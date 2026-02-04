@@ -323,7 +323,7 @@ export default function main() {
   return (
     <main className="relative h-[100dvh] w-full bg-black">
       {/* 3D-Layer */}
-      <GlobeView onReady={init_globe} globe_state={globe_state}/>
+      <GlobeView onReady={init_globe} globe_state={globe_state} game_state={game_state}/>
       {/* Globaler Mini-Spinner während Fragen-Ladevorgang */}
       {are_questions_loading && <LoadingSpinner />}
       {/* Progressbar */}

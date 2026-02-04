@@ -116,6 +116,7 @@ export default function ScreenSubmit({ onBack, game_state }: ScreenSubmitProps) 
           transform-gpu
           ease-out
           motion-reduce:transition-none
+          overflow-hidden
 
           after:content-['']
           after:absolute
@@ -130,8 +131,8 @@ export default function ScreenSubmit({ onBack, game_state }: ScreenSubmitProps) 
 
           portrait:top-auto
           portrait:self-center
-          portrait:h-[95%]
-          portrait:w-[95%]
+          portrait:h-[95dvh]
+          portrait:w-[95dvw]
           
         "
       >
@@ -171,6 +172,7 @@ export default function ScreenSubmit({ onBack, game_state }: ScreenSubmitProps) 
             relative
             h-full
             w-full
+            min-h-0
             bg-[var(--col-light)]
 
             col-start-2
@@ -188,13 +190,15 @@ export default function ScreenSubmit({ onBack, game_state }: ScreenSubmitProps) 
             portrait:col-end-3
             portrait:rounded-[var(--border-radius-main)]
             portrait:p-2
-            portrait:py-4
+            portrait:py-2
+          
           "
         >
           <div
             id="background"
             className="
               relative
+              min-h-0
               h-full
               w-full
               bg-[image:var(--grad-light)]
@@ -215,6 +219,11 @@ export default function ScreenSubmit({ onBack, game_state }: ScreenSubmitProps) 
                 overflow-auto
 
                 custom_scrollbar
+
+                portrait:before:content-['']
+                portrait:before:relative
+                portrait:before:h-[5.3dvh]
+                portrait:before:w-full
               "
             >
               <div
@@ -261,7 +270,14 @@ export default function ScreenSubmit({ onBack, game_state }: ScreenSubmitProps) 
                 </div>
               </div>
 
-              <div id="seperator" className="w-full h-[0.87dvh] bg-[var(--col-light)]"></div>
+              <div 
+                id="seperator" 
+                className="
+                  w-full
+                  h-[0.87dvh]
+                  min-h-2
+                  bg-[var(--col-light)]
+                "></div>
 
               <div
                 id="email_container"
@@ -291,7 +307,7 @@ export default function ScreenSubmit({ onBack, game_state }: ScreenSubmitProps) 
                   "
                 >
                   <input id="terms_box" type="checkbox" name="terms" />
-                  <label htmlFor="terms_box">
+                  <label htmlFor="terms_box" className="text-[2.18dvh]">
                     Hiermit stimme ich den <a href="www.google.de">TERMs</a> zu
                   </label>
                 </div>
@@ -303,9 +319,14 @@ export default function ScreenSubmit({ onBack, game_state }: ScreenSubmitProps) 
                     w-full
                     gap-[1.1dvw]
                     justify-between
+                    relative
 
                     portrait:flex-col-reverse
                     portrait:gap-2
+                    portrait:before:content-['']
+                    portrait:before:relative
+                    portrait:before:h-[5.3dvh]
+                    portrait:before:w-full
                   "
                 >
                   <SecondaryButton

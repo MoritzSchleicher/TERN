@@ -22,6 +22,7 @@ export type GlobeAPI = {
 export type Props = {
   onReady?: (api: GlobeAPI) => void;
   globe_state: GlobeState,
+  game_state: GameState
 };
 
 
@@ -53,12 +54,18 @@ let flags: Pin[] = [];
 // *   (z. B. DOM-Ref, Timer-ID, Three.js-Objekt)
 // * 
 // *────────────────────────────────
-export default function GlobeView({ onReady, globe_state }: Props) {
+export default function GlobeView({ onReady, globe_state, game_state }: Props) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const globeRef = useRef<any>(null); // three-globe Instanz#
 
   const cameraRef = useRef<PerspectiveCamera | null>(null);
   const controlsRef = useRef<OrbitControls | null>(null);
+  const gameStateRef = useRef(game_state);
+
+  useEffect(() => {
+    gameStateRef.current = game_state;
+  }, [game_state]);
+
 
   // (A) onReady als Ref halten
   const onReadyRef = useRef<Props["onReady"]>(onReady);
@@ -185,8 +192,11 @@ export default function GlobeView({ onReady, globe_state }: Props) {
         camera.aspect = clientWidth / clientHeight;
         camera.updateProjectionMatrix();
 
-        // view offset neu anwenden (wichtig!)
-        if (currentViewOffsetX) applyViewOffsetX(currentViewOffsetX);
+        if (gameStateRef.current === GameState.SUBMIT) {
+          centerGlobeForSubmit(0);
+        } else {
+          applyViewOffsetX(currentViewOffsetX);
+        }
       };
       window.addEventListener("resize", onResize);
 
@@ -236,6 +246,14 @@ export default function GlobeView({ onReady, globe_state }: Props) {
 
           activeViewOffsetTween = requestAnimationFrame(step);
         });
+      }
+
+      function centerGlobeForSubmit(ms = 0) {
+        const offsetPx =
+          (window.innerWidth / 1920) *
+          Constants.GLOBE.SUBMIT_SCREEN_OFFSET_PX;
+
+        return tweenViewOffsetX(offsetPx, ms);
       }
 
 
@@ -395,7 +413,7 @@ export default function GlobeView({ onReady, globe_state }: Props) {
 
       // Submit-Pose: wie START_POS + Target wieder Zentrum
       async function toSubmitPose(ms = 900): Promise<void> {
-        const offsetPromise = tweenViewOffsetX(Constants.GLOBE.SUBMIT_SCREEN_OFFSET_PX, Math.min(ms, ms));
+        const offsetPromise = centerGlobeForSubmit(ms);
 
         if (activeTween) cancelAnimationFrame(activeTween);
         resolveCurrentFlight?.();
