@@ -37,7 +37,7 @@ import ScreenSubmit from "@/components/screens/ScreenSubmit";
 // *   return <Button label={label} style={{ color: "red" }} />;
 // * }
 // *────────────────────────────────
-export default function main() {
+export default function Main() {
   // Refs
   const globe_api_ref = useRef<GlobeAPI | null>(null);
   const time_ctrl_api_ref = useRef<TimeController | null>(null);
